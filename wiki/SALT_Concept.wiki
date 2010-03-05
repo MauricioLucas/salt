@@ -14,23 +14,28 @@ Server is mirrored to give redundancy. Open API to submit and get data.
 ==1.1	Web Frontend==
 ===1.1.1	User Account===
 Authenticate Users. (Trusted developers and so on…) Allow edit/update owned StdLib’s. May use the autohotkey.com User/PW; to authenticate.
-===1.1.2	Create StdLib Form===
-Submit new StdLib Functions. Except some trusted coders, the submitted code is reviewed by SALT staff, before it’s added to the downloadable Contend of the Client. 
 
-Unlike that, Submitted StdLib’s (or modifications; new versions) are instantly accessible true the *SALT-StdLib-Frontend* for every one. So after creation/Update from the StdLib, the developer can post the *SALT-StdLib-Frontend* Link to the AHK Forum, and doesn't have to wait until his code is checked.
+dR:
+  This is a nice to have feature, but i doubt that it will be possible soon. For instance
+  we might try with autohotkey.net user credentials.
+
+===1.1.2	Create StdLib Form===
+Submit new StdLib Functions. Except some trusted coders, the submitted code is reviewed by SALT staff, before it’s added to the downloadable contend of the client. 
+
+Unlike that, submitted StdLib’s (or modifications; new versions) are instantly accessible true the *SALT-StdLib-Frontend* for every one. So after creation/update from the StdLib, the developer can post the *SALT-StdLib-Frontend* Link to the AHK Forum, and doesn't have to wait until his code is checked.
 
 ===1.1.3	SALT-StdLib-Frontend===
-This provides an online StdLib Code review – as it’s done until now in the AHK Forum for anyone. So the Developer has only to create a new StdLib on SALT and can back link from the AHK Forum to the *SALT-StdLib-Frontend*  This prevents Developers from having multiple places where they have to take care to have their StdLib’s up to date.
+This provides an online StdLib code review – as it’s done until now in the AHK Forum for anyone. So the Developer has only to create a new StdLib on SALT and can back link from the AHK Forum to the *SALT-StdLib-Frontend*  This prevents developers from having multiple places where they have to take care to have their StdLib’s up to date.
 
 ===1.1.4	Edit StdLib-Frontend===
-The owner of a StdLib Project can easily edit/update his StdLib. Here rules the same policy which is used by the creation of a StdLib:
-The Update is instantly accessible true the *SALT-StdLib-Frontend* to give the same possibilities that exist now. But (except of trusted Developer), the Update isn’t available to the SALT-Client, until the SALT-Staff has reviewed the code and marked as secure.
+The owner of a StdLib project can easily edit/update his StdLib. Here rules the same policy which is used by the creation of a StdLib:
+The update is instantly accessible through the *SALT-StdLib-Frontend* to give the same possibilities that exist now. But (except of trusted developer), the update isn’t available to the SALT-client, until the SALT-staff has reviewed the code and marked as secure.
 
-In Fact, this is the Main advantage to the “Forum/Thread-Hosted-Code” Version of Salt. So it’s much more secure to the users.
+In Fact, this is the main advantage to the “Forum/Thread-Hosted-Code” version of SALT. So it’s much more secure to the users.
 ==1.2	SALT Client==
 
 The SALT-Client is a Service that runs in background of any AHK Developer/User. Features:
   * Keep Existing StdLib’s up to date
-  * Automatic Install StdLib’s which depends on another.
-  * Browse Existing StdLib’s; Search by Keywords.
-  * SALT-Client has an open API, therefore Scripts can use it to get the SALT-Client installing StdLib’s on which the Script itself depend on.
+  * Automatic install StdLib’s which depends on another.
+  * Browse existing StdLib’s; Search by keywords.
+  * SALT-client has an open API, therefore Scripts can use it to get the SALT-Client installing StdLib’s on which the script itself depend on.
