@@ -1,5 +1,7 @@
+#summary This page describes a list of features and desired techniques for the SALT Client Script.
 #labels Featured,Phase-Design
-#This page describes a list of features and desired techniques for the SALT Client Script.
+
+<wiki:toc max_depth="3" />
 
 = Introduction =
 
