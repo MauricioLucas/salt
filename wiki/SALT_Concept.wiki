@@ -33,4 +33,4 @@ The SALT-Client is a Service that runs in background of any AHK Developer/User. 
   * Keep Existing StdLib’s up to date
   * Automatic Install StdLib’s which depends on another.
   * Browse Existing StdLib’s; Search by Keywords.
-  * SALT-Client has an open API, therefore Scripts ca use it to get the SALT-Client installing StdLib’s on which the Script itself depend on.
+  * SALT-Client has an open API, therefore Scripts can use it to get the SALT-Client installing StdLib’s on which the Script itself depend on.
