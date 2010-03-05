@@ -1,7 +1,7 @@
 #summary This page describes a list of features and desired techniques for the SALT Client Script.
 #labels Featured,Phase-Design
 
-<wiki:toc max_depth="3" />
+<wiki:toc max_depth="2" />
 
 = Introduction =
 
@@ -11,20 +11,20 @@ The SALT script is the swiss army knife script for stdLibs. Due to its modular n
 = Details =
 
 The SALT client is build upon PureMESH (Pure ModulE Scripting Helper, that is). The modules to be included in the very 1st version of the SALT client:
-  * PureMESH ModuleManager
+  * PureMESH !ModuleManager
   * YAML Parser
-  * SALT ContentStream Browser
-  * SALT Delta StreamUpdater
-  * SALT Delta StdLibUpdater
-  * StdLib DirectJumperBrowser
+  * SALT !ContentStream Browser
+  * SALT Delta !StreamUpdater
+  * SALT Delta !StdLibUpdater
+  * StdLib !DirectJumperBrowser
   * SALT StdLib Proposer
   * SALT StdLib Uploader
   * SALT Staff Helper
-  * SALT DeltaMerger
+  * SALT !DeltaMerger
 
 == Rough details about the modules ==
 
-=== PureMESH ModuleManager ===
+=== PureMESH !ModuleManager ===
 
 This is a part of PureMESH. It allows enabling or disabling modules in a MESH Script.
 
@@ -32,19 +32,21 @@ This is a part of PureMESH. It allows enabling or disabling modules in a MESH Sc
 
 YAML is a human readable method to store data. Same as XML, or JSON but better to understand when not being a computer and with less overhead. It was generated as an alternative to XML and now currently has evolved to a comparable standard. The default filesuffix is ".yml". The YAML Parser needed in this project doenst need to be a fully qualified YAML parser, but basically just needs to "understand" the concepts of lists and name-value-pairs. An additional feature 'd be an anonymized accessor so our script may work without knowing details about the YAML stream (unlike XPATH, but comparable to JavaScript's DOM traversing).
 
-=== SALT ContentStream Browser ===
+Have a look at [http://components.symfony-project.org/yaml/trunk/book/02-YAML this primer] to learn more about YAML.
+
+=== SALT !ContentStream Browser ===
 
 The content stream browser needs to understand which context it is actually browsing. It's main task is to display the parsed information in a nice GUI.
 
-=== SALT Delta StreamUpdater ===
+=== SALT Delta !StreamUpdater ===
 
 The delta stream updater is supposed to be capable to update sync offline database with stream details it got from the SALT service.
 
-=== SALT Delta StdLibUpdater ===
+=== SALT Delta !StdLibUpdater ===
 
 The StdLib Updater takes care of versioning and updating existing stdLib files where desired. Under no circumstances it should destroy any existing configurations and thus break scripts.
 
-=== StdLib DirectJumperBrowser ===
+=== StdLib !DirectJumperBrowser ===
 
 This is supposed to be a build in browser control (see this one: [http://www.autohotkey.com/forum/viewtopic.php?t=34358 Skan's 27L MiniBrowser]) which jumps directly at a standardLib discussion, documenation, samples, author's page whatever.
 
@@ -60,6 +62,8 @@ This module is intended to be a module for StdLib Developers to upload or update
 
 This module is intended to be a module for staff members to review proposed scripts standardLib candidates. It features the same functions as the webfrontend.
 
-=== SALT DeltaMerger ===
+=== SALT !DeltaMerger ===
 
 The deltaMerger is a script which works with standard diffs so it is capable to modify an existing script by just downloading and changing the neccessary data chunks which actually changed.
+
+Have a look at this [http://code.google.com/p/google-diff-match-patch/ GoogleCode Project]
