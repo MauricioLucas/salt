@@ -10,7 +10,7 @@ The Server, which host the full StdLib with a unique StdLib ID.
   * Dependencies
   * License, Coder
 Server is mirrored to give redundancy. Open API to submit and get data.
-
+=1.	Frontend=
 ==1.1	Web Frontend==
 ===1.1.1	User Account===
 Authenticate Users. (Trusted developers and so on…) Allow edit/update owned StdLib’s. May use the autohotkey.com User/PW; to authenticate.
