@@ -1,4 +1,5 @@
 #summary This is the base Concept of this project. Note: The following Concept is just a conversation base and subject to change.
+#labels Phase-Design
 
 =*SALT*=
 
@@ -9,6 +10,9 @@ The Server, which host the full StdLib with a unique StdLib ID.
   * Version information
   * Dependencies
   * License, Coder
+  * Links to discussion
+  * Links to samples
+  * Links to documentation
 Server is mirrored to give redundancy. Open API to submit and get data.
 =1.	Frontend=
 ==1.1	Web Frontend==
@@ -22,7 +26,7 @@ dR:
 ===1.1.2	Create StdLib Form===
 Submit new StdLib Functions. Except some trusted coders, the submitted code is reviewed by SALT staff, before it’s added to the downloadable contend of the client. 
 
-Unlike that, submitted StdLib’s (or modifications; new versions) are instantly accessible true the *SALT-StdLib-Frontend* for every one. So after creation/update from the StdLib, the developer can post the *SALT-StdLib-Frontend* Link to the AHK Forum, and doesn't have to wait until his code is checked.
+Unlike that, submitted StdLib’s (or modifications; new versions) are instantly accessible through the *SALT-StdLib-Frontend* for every one. So after creation/update from the StdLib, the developer can post the *SALT-StdLib-Frontend* Link to the AHK Forum, and doesn't have to wait until his code is checked.
 
 ===1.1.3	SALT-StdLib-Frontend===
 This provides an online StdLib code review – as it’s done until now in the AHK Forum for anyone. So the Developer has only to create a new StdLib on SALT and can back link from the AHK Forum to the *SALT-StdLib-Frontend*  This prevents developers from having multiple places where they have to take care to have their StdLib’s up to date.
@@ -39,3 +43,4 @@ The SALT-Client is a Service that runs in background of any AHK Developer/User. 
   * Automatic install StdLib’s which depends on another.
   * Browse existing StdLib’s; Search by keywords.
   * SALT-client has an open API, therefore Scripts can use it to get the SALT-Client installing StdLib’s on which the script itself depend on.
+  * SALT client frontend is to be build on a modular structure, this allows having modules for staffmembers for easy reviewing, for StdLib coders which can easily update through API, a module for browsing the discussion
