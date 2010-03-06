@@ -1,0 +1,5 @@
+/**
+ * SALT HOTKEYS
+ *
+ */
+esc::ExitApp

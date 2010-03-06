@@ -1,0 +1,60 @@
+/**
+ * MESH Module Manager
+ *
+ * SYNOPSIS
+ *   The Module-Manager allows quickly to enable or disable Modules within Mesh
+ *
+ * See ReadMe.txt from MESH for additional information
+ *
+ * LICENCE
+ *   This File is licensed under EUPL 1.1 or later
+ *   written Jan 2010 by derRaphael for PureMESH 1.0
+ *
+ */
+ModuleManagerAutoExecute:
+	; Initialize Globale Module Variables:
+	Author  := "derRaphael"
+	Version := "1.0"
+	Purpose := "The Module-Manager allows quickly to enable or disable Modules within the Mesh."
+	Licence := "EUPL 1.1 or later"
+	i18n    := "false"
+	
+	ModuleRequiresMesh    := "EqualOrLater:0.5.2010-01-30"
+	ModuleRequiredModules := "fs:EqualOrLater:1.0"
+	
+	; After Registration, the above variables are stored in the MeshModuleInfo functions
+	; and the global variables are deleted
+	mHelper_RegisterModule()
+	
+	; Init base variables like Path and or other helper 
+	Gosub, ModuleManagerInit
+	
+	; Register the ModuleManagerGui
+	Gosub, ModuleManagerGuiInit
+	
+	
+	
+Return
+
+; This Label is called, when then menu gets activated
+ModuleManagerStart:
+	Gosub, ModuleManagerGuiBuild
+	Gosub, ModuleManagerGuiShow
+Return
+
+; If <ModuleName>Menu Exists, it will be automatically included in the GUI's Modules Menu
+ModuleManagerMenu:
+	; Of course we're not limited to a single Menu here ...
+	Menu, MenuModuleManager, Add, ModuleManagerStart
+Return
+
+; If <ModuleName>About Exists, it will be automatically called from GUIs about Modules page
+ModuleManagerAbout:
+	mHelper_MsgBoxIndirect( "ModuleManager " mCore_get( "ModuleManagerVersion" )
+						  , "This script enables or disables Modules within the Mesh" )
+Return
+
+; If <ModuleName>OnExit Exists, it will be automatically called whenever the script exits
+ModuleManagerOnExit:
+	; Your ExitAction Stuff goes here...
+Return
