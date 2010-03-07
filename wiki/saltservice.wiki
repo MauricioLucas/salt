@@ -1,0 +1,20 @@
+#summary saltservice
+
+== Introduction ==
+
+*saltservice* is the core of the local SALT Client. It's a service which offers all functionalitys true the easy saltservice API to all other Applications.
+
+The Client-GUI will use the API and even 3th party scripts can use the API to enforce StdLib Installations/Checks.
+
+
+
+== Saltservice API==
+
+The API is mainly a collection of Wrapper-Functions for the InterProc communication to get easy access to the saltservice and control it.
+
+_more information comes soon _
+
+
+=== Files ===
+  * saltservice.ahk
+  * saltserviceAPI.ahk
