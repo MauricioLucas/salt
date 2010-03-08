@@ -25,7 +25,7 @@ This will work compareable to apt-get under Linux.
 
 ==saltservice GUIs:==
 
-[_this a idea only and subject to change_]
+_this a idea only and subject to change_
 
 The saltservice will have some GUIs, but they are all of informative nature only. (To inform the user about download/install progress.)
 
