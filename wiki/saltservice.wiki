@@ -14,7 +14,22 @@ The API is mainly a collection of Wrapper-Functions for the InterProc communicat
 
 _more information comes soon _
 
+==Repository Management==
+
+The local Salt Service can have any count of Repos which are checked out. The Repos can have redundancy (to secure the avaiability), but don't must have it. 
+
+_Furter, first implementation of SALT will have only support for StdLibs, but this may change in furter releases to support any scripts with own install instructions._
+
+This will work compareable to apt-get under Linux.
+
+
+==saltservice GUIs:==
+
+[_this a idea only and subject to change_]
+
+The saltservice will have some GUIs, but they are all of informative nature only. (To inform the user about download/install progress.)
 
 === Files ===
-  * saltservice.ahk
-  * saltserviceAPI.ahk
+  * saltservice.ahk       // salt core
+  * saltserviceAPI.ahk    // Open API 
+  * IPC.ahk               // Interproc Com
