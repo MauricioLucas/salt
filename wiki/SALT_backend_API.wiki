@@ -1,0 +1,46 @@
+#summary Description of SALT Backend API
+
+= Introduction =
+
+The SALT backend is a webserver, including a Database and PHP Skripts. Connection to the Backend is done true http.  
+You have to use GET/POST Parameters to comunicate with /api/server.php
+
+Authentication is very improtant, as we have autoupdated code (stdlib) and other sensitive data. Security bases on standard implemantation of user-pw generated session id's. -> Cookies
+
+
+== DATA TYPES ==
+
+ ===PACKAGE_DESCRIPTOR===
+ A yaml object, which fully describes a PACKAGE. Including filesize,author, version infromation, genre...and more.
+
+ ===PACKAGE_DATA===
+ All data and installation instructions for saltservice, to install a PACKAGE.
+
+ ===PACKAGE_ID===
+ identifier for a Package. Primary key in the database.
+
+== Authentication ==
+
+_no infromation given so far_
+
+
+== Information Gathering ==
+
+
+  * GET_FULL_PACKET_LIST()		
+    * RETURNS: {collection of PACKAGE_DESCRIPTOR's}
+		
+  * GET_PACKAGE_DATA(PACKET_ID)	
+    * RETURNS: {all data, and information, to install the PACKAGE}
+		
+  * GET_PACKAGE_DESCRIPTOR(PACKET_ID)		
+    * RETURNS: {PACKAGE_DESCRIPTOR}
+
+
+== Information Commiting==
+
+  * CREATE_PACKAGE(PACKAGE_DESCRIPTOR,PACKET_DATA)
+    * RETURNS: {PACKET_ID / FAIL}
+		
+  * UPDATE_PACKAGE(PACKET_ID,PACKET_DATA,PACKAGE_DESCRIPTOR)
+    * RETURNS: {SUCCESSFULL / FAIL}
