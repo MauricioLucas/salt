@@ -2,7 +2,7 @@
 
 = Introduction =
 
-The SALT backend is a webserver, including a Database and PHP Skripts. Connection to the Backend is done true http.  
+The SALT backend is a webserver, including a Database and PHP Skripts. Connection to the Backend is done through http.  
 You have to use GET/POST Parameters to comunicate with /api/server.php
 
 Authentication is very improtant, as we have autoupdated code (stdlib) and other sensitive data. Security bases on standard implemantation of user-pw generated session id's. -> Cookies
