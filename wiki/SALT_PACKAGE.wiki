@@ -21,9 +21,9 @@ The descriptor includes all necessary information about a package - like depende
 
 
 
-==salt install instructions==
+==SALT install instructions==
 
-salt bases on the concept of a package manager like APT. So the salt core design should not be limited to std Lib files.
+SALT bases on the concept of a package manager like APT. So the salt core design should not be limited to std Lib files.
 Therefore, the install instructions has to be defined. Dependecies must NOT be handled here, as they are handled(cheched,updated, installed) by saltservice before.
 
 The install instructions are a set of very basic commands;
@@ -34,8 +34,6 @@ The install instructions are a set of very basic commands;
 If a PACKAGE needs more control over installation process, the #exec command should be used to start a user definied exe or ahk script. This limts salt in some ways, minory in the deinstallation process, which bases on the install instructions. 
 
 _UnInstall process has to be discussed/defined anyway_
-
-
 
 
 
