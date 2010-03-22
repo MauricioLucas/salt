@@ -1,0 +1,47 @@
+#summary One-sentence summary of this page.
+
+===SALT PACKAGE ===
+
+A valid salt PACKAGE has the following dir/name specification:
+{{{
+[PACKAGENAME]-[VERSION].7z.salt
+/data              //Data folder which holds all relevant data
+/descriptor.yml    //SALT DESCRIPTOR
+}}}
+
+All downloaded PACKAGES are copyed into the salt install cache.
+_Note: This design allows offline installing, pre downloading, caching and so on_
+
+
+
+==SALT DESCRIPTOR==
+
+The SALT-DESCRIPTOR is a yml file ("descriptor.yml"). The used file format is yaml, an xml like format, with low overhead. 
+The descriptor includes all necessary information about a package - like dependecies, version information, description, genre type, install instructions...
+
+
+
+==salt install instructions==
+
+salt bases on the concept of a package manager like APT. So the salt core design should not be limited to std Lib files.
+Therefore, the install instructions has to be defined. Dependecies must NOT be handled here, as they are handled(cheched,updated, installed) by saltservice before.
+
+The install instructions are a set of very basic commands;
+{{{
+#copy /data/stdlib.ahk %stdlib%\stdlib.ahk
+#exec /my_own_installer.exe
+}}}
+If a PACKAGE needs more control over installation process, the #exec command should be used to start a user definied exe or ahk script. This limts salt in some ways, minory in the deinstallation process, which bases on the install instructions. 
+
+_UnInstall process has to be discussed/defined anyway_
+
+
+
+
+
+
+
+
+
+
+
