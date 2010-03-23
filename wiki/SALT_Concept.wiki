@@ -26,10 +26,6 @@ Server is mirrored to give redundancy.
 ===1.1.1	User Account===
 Authenticate Users. (Trusted developers and so on…) Allow edit/update owned StdLib’s. May use the autohotkey.com User/PW; to authenticate.
 
-dR:
-  This is a nice to have feature, but i doubt that it will be possible soon. For instance
-  we might try with autohotkey.net user credentials.
-
 ===1.1.2	Create StdLib Form===
 Submit new StdLib Functions. Except some trusted coders, the submitted code is reviewed by SALT staff, before it’s added to the downloadable contend of the client. 
 
