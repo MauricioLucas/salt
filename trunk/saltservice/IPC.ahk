@@ -14,6 +14,7 @@ m_IPC_CONID_COUNT		:= 0
 
 m_IPC_PACKETID_RECV_COUNTER	:= 0
 
+m_IPC_DEBUG_MODE		:= true
 
 IPC_SYS_COMMAND_LIST	:= "$IPC_CONNECTION_QUERRY,$IPC_CONNECTION_ACK,$IPC_CONNECTION_REM,$IPC_CONNECTION_QUIT"
 
@@ -75,7 +76,7 @@ IPC_CONNECTION_CONNECT(TARGET_PID){
 	
 	IPC_CONNECTION_STATE($IPC_NEW_CONID,"$IPC_WAIT")
 	state := _IPC_Send_WM_COPYDATA($PIC_SYS_MSG, TARGET_PID)
-	if(!instr(state,"FAIL")){
+	if(state){
 		;// Wait for connection ACK/REM
 		Loop
 		{
@@ -91,13 +92,12 @@ IPC_CONNECTION_CONNECT(TARGET_PID){
 			$IPC_NEW_CONID := false
 		}
 	}else{
-		MsgBox,16, ERROR, % "Process " DllCall("GetCurrentProcessId") "(me) can't  connect to " TARGET_PID " Reason:`n" . state
+		_IPC_THROW_EXEPTION("Process " DllCall("GetCurrentProcessId") "(me) can't  connect to " TARGET_PID " Reason:`n" . IPC_GETLASTERROR(),true)
 		_IPC_CONNECTION_LIST_REM($IPC_NEW_CONID)
 		$IPC_NEW_CONID := false
 	}
 	Return, $IPC_NEW_CONID
 }
-
 IPC_CONNECTIONS_LIST(){
 global m_IPC_CON_ID_LIST
 	Return, m_IPC_CON_ID_LIST
@@ -126,7 +126,6 @@ global
 	Return, m_IPC_CON_%CON_ID%_STATE
 }
 
-;************** private function with _ prefix
 
 IPC_CONNECTION_QUIT(CON_ID){
 	
@@ -145,6 +144,58 @@ IPC_CONNECTION_QUIT(CON_ID){
 	Return, true
 }
 
+/*****************************************************
+UPACK are user defined Packages, sent over IPC.
+
+******************************************************
+*/
+
+IPC_UPAK_ADD(byref IPC_UPAK,PARAM){
+	IPC_UPAK := IPC_UPAK . asciihex(PARAM) . "|"
+}
+
+IPC_UPAK_SEND(CON_ID,IPC_UPAK){
+	
+	if(IPC_CONNECTION_STATE(CON_ID) != "$IPC_CONNECTED"){
+		_IPC_THROW_EXEPTION(a_thisfunc . ": FAIL - Connection not ready! IPC_CONNECTION_STATE (" . IPC_CONNECTION_STATE(CON_ID) . ")")
+		return, false				;// connection not ready!
+	}
+	
+	IPC_UPAK := CON_ID "|" . IPC_UPAK
+	
+	if(!_IPC_Send_WM_COPYDATA(IPC_UPAK, IPC_CONNECTION_PID(CON_ID))){
+		_IPC_THROW_EXEPTION(a_thisfunc "FAIL can't send data!")
+		return, false				
+	}
+	Return, true
+}
+
+IPC_GETLASTERROR(){
+global	m_IPC_LAST_ERROR
+	if(m_IPC_LAST_ERROR = ""){
+		m_IPC_LAST_ERROR := "ERROR: There arn't any informations about an error!"
+	}
+	Return, m_IPC_LAST_ERROR
+}
+IPC_GETERRORHISTORY(){
+global	m_IPC_ERROR_HISTORY
+	Return, m_IPC_ERROR_HISTORY
+}
+
+
+
+;************** private function with _ prefix
+
+_IPC_THROW_EXEPTION(errdescpr,notify=False){
+global	m_IPC_LAST_ERROR, m_IPC_ERROR_HISTORY, m_IPC_DEBUG_MODE
+	
+	m_IPC_LAST_ERROR := A_NowUTC . " :: " . errdescpr
+	m_IPC_ERROR_HISTORY .= m_IPC_LAST_ERROR . "`n"
+	if(notify or m_IPC_DEBUG_MODE){
+		MsgBox,16, %A_ScriptName% - IPC Internal Error, % IPC_GETLASTERROR()
+	}
+}
+
 
 /*
 Create Systemwide unique ConID
@@ -157,9 +208,14 @@ global m_IPC_CONID_COUNT
 
 _IPC_CONNECTION_REGISTER(CON_ID,TARGET_PID){
 global
+	if(TARGET_PID = "" || TARGET_PID = 0){
+		_IPC_THROW_EXEPTION(a_thisFunc . " TARGET PID is not valid! PID: " TARGET_PID)
+		Return, false
+	}
 	m_IPC_CON_%CON_ID%_PID		:= TARGET_PID
 	m_IPC_CON_%CON_ID%_STATE	:= "CONNECTED"
 	_IPC_CONNECTION_LIST_ADD(CON_ID)
+	Return, true
 }
 
 _IPC_CONNECTION_LIST_ADD(CON_ID){
@@ -195,7 +251,7 @@ NOTE: This code was taken from AHK HELP
 *********************************************************************************
 */
 _IPC_Receive_WM_COPYDATA(wParam, lParam){
-global SALTSRVAPI_CALLBACKFUNC
+global m_IPC_CALLBACK_FUNC
 
     StringAddress := NumGet(lParam + 8)  ; lParam+8 is the address of CopyDataStruct's lpData member.
     StringLength := DllCall("lstrlen", UInt, StringAddress)
@@ -208,6 +264,7 @@ global SALTSRVAPI_CALLBACKFUNC
 		
 		if(!IPC_PROCESS_SYSDATA(MSG_sITEM)){	;// if it's not a system msg...
 			IPC_MSG_PUSH(MSG_sITEM)
+			;MsgBox %a_scriptname% pushed msg: %MSG_sITEM% now calling: %m_IPC_CALLBACK_FUNC%
 			if(m_IPC_CALLBACK_FUNC != ""){
 				%m_IPC_CALLBACK_FUNC%(MSG_sITEM)
 			}
@@ -231,8 +288,7 @@ global IPC_SYS_COMMAND_LIST, $SYS_LOG
 	StringSplit,IPC_MSG_ITEM,MSG_sITEM,|
 	
 	$SYS_LOG .= MSG_sITEM  . "`n"
-	ToolTip, % $SYS_LOG
-	
+	;MsgBox %MSG_sITEM%`nSYS:  %IPC_MSG_ITEM1%
 	if IPC_MSG_ITEM1 in %IPC_SYS_COMMAND_LIST%
 	{
 		;----handle SYS HOOKs -----------------------------------
@@ -245,20 +301,21 @@ global IPC_SYS_COMMAND_LIST, $SYS_LOG
 			}
 		}
 		;-------------------------------------------------------
-		if(IPC_MSG_ITEM1 = "$IPC_CONNECTION_QUERRY"){
+		if(IPC_MSG_ITEM1 = "$IPC_CONNECTION_QUERRY"){	; Incomming connetion request
 		
-		;// berechtingungen prüfen, ob connetion zulassen
+			;// berechtingungen prüfen, ob connetion zulassen
 
-		;// überprüfen ob schon mit dieser PID connected
-		
-		;// ok connection akzeptieren.
-		$PIC_SYS_MSG	:= "$IPC_CONNECTION_ACK|" . IPC_MSG_ITEM2 . "|" . DllCall("GetCurrentProcessId") ;$IPC_CONNECTION_QUERRY|[CON_ID]|[PID]
-		_IPC_CONNECTION_REGISTER(IPC_MSG_ITEM2,IPC_MSG_ITEM3)
-		IPC_CONNECTION_STATE(IPC_MSG_ITEM2,"$IPC_CONNECTED")
-		_IPC_Send_WM_COPYDATA($PIC_SYS_MSG, Target_PID)
+			;// überprüfen ob schon mit dieser PID connected
+			
+			;// ok connection akzeptieren.
+			$PIC_SYS_MSG	:= "$IPC_CONNECTION_ACK|" . IPC_MSG_ITEM2 . "|" . DllCall("GetCurrentProcessId") ;$IPC_CONNECTION_QUERRY|[CON_ID]|[PID]
+			_IPC_CONNECTION_REGISTER(IPC_MSG_ITEM2,IPC_MSG_ITEM3)
+			IPC_CONNECTION_STATE(IPC_MSG_ITEM2,"$IPC_CONNECTED")
+			if(!_IPC_Send_WM_COPYDATA($PIC_SYS_MSG, IPC_MSG_ITEM3)){
+				_IPC_THROW_EXEPTION(A_thisFunc . " Incomming Connection was accepted, but can't reach the Requester now.")
+			}
 		
 		}else if(IPC_MSG_ITEM1 = "$IPC_CONNECTION_ACK"){
-			
 			;unser request wurde akzeptiert
 			IPC_CONNECTION_STATE(IPC_MSG_ITEM2,"$IPC_CONNECTED")
 		}else if(IPC_MSG_ITEM1 = "$IPC_CONNECTION_REM"){
@@ -283,9 +340,9 @@ _IPC_Send_WM_COPYDATA(ByRef StringToSend, Target_PID){
 	
 	Process, Exist, %Target_PID%
 	if(!errorlevel){
-		Return "FAIL - Target Process not found! (" . Target_PID . ")"
+		_IPC_THROW_EXEPTION(a_thisfunc . ": FAIL - Target Process not found! (" . Target_PID . ")")
+		Return, False
 	}
-	
 	;--------------------------------------------------------------------------
     VarSetCapacity(CopyDataStruct, 12, 0)  ; Set up the structure's memory area.
     ; First set the structure's cbData member to the size of the string, including its zero terminator:
@@ -313,8 +370,8 @@ PACKETid|CONNECTIONID|(hex)MSG
 */
 
 IPC_MSG_PUSH(MSG_sITEM){
-global m_IPC_MSG_QUEUE, m_IPC_MSG_QUEUE_COUNT, m_IPC_PACKETID_RECV_COUNTER
-	If(MSG != ""){
+global 
+	If(MSG_sITEM != ""){
 		m_IPC_PACKETID_RECV_COUNTER++
 		m_IPC_MSG_QUEUE := m_IPC_PACKETID_RECV_COUNTER . "|" . MSG_sITEM . "`n" . m_IPC_MSG_QUEUE
 		m_IPC_MSG_QUEUE_COUNT++
@@ -322,12 +379,12 @@ global m_IPC_MSG_QUEUE, m_IPC_MSG_QUEUE_COUNT, m_IPC_PACKETID_RECV_COUNTER
 	}
 }
 IPC_MSG_POP(CONNECTIONID=0){
-global m_IPC_MSG_QUEUE, m_IPC_MSG_QUEUE_COUNT
+global
 
 bdone 				:= false
 MSG_sITEM			:= ""
 m_IPC_MSG_QUEUE_new := ""
-	If (IPC_MSG_COUNT() > 1){
+	If (IPC_MSG_COUNT() > 0){
 		Loop, parse, m_IPC_MSG_QUEUE,`n,`r
 		{
 			if(A_LoopField = ""){
@@ -336,7 +393,7 @@ m_IPC_MSG_QUEUE_new := ""
 			StringSplit,MSG_ITEM,A_LoopField,|
 			
 			if(((!CONNECTIONID) || (MSG_ITEM2 = CONNECTIONID)) && (!bdone)){
-				MSG_sITEM := A_LoopField
+				MSG_sITEM := substr(A_LoopField,Instr(A_LoopField,"|")+1)
 				bdone := true
 				m_IPC_MSG_QUEUE_COUNT--
 			}else{
@@ -346,13 +403,27 @@ m_IPC_MSG_QUEUE_new := ""
 		m_IPC_MSG_QUEUE := m_IPC_MSG_QUEUE_new
 		Return, MSG_sITEM
 	}else{
+		_IPC_THROW_EXEPTION(a_thisfunc . ": FAIL - A MSG POP was requested, but there arn't any MSG's!")
 		Return, false
 	}
 }
 
-IPC_MSG_COUNT(){
-global m_IPC_MSG_QUEUE_COUNT
-	Return, m_IPC_MSG_QUEUE_COUNT
+IPC_MSG_COUNT(fast=false){
+global 
+	cnt := 0
+	if(!fast){
+		Loop, parse, m_IPC_MSG_QUEUE,`n,`r
+		{
+			if(A_LoopField = ""){
+				Continue
+			}else{
+				cnt++
+			}
+		}
+	}else{
+	cnt :=  m_IPC_MSG_QUEUE_COUNT
+	}
+	Return, cnt
 }
 
 
