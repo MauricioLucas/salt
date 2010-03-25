@@ -12,9 +12,10 @@ OnExit, EXITHANDLER
 
 CON_ID := SALTSRVAPI_CONNECT()		;//Reverse Connection to saltservice (start saltservice and let the service connect to us)
 
-MsgBox Connected to server with conid: %con_id%
 
-Return
+msgbox % "saltservice hat mir folgendes geschickt: `n`n" . SALTSRVAPI_GET_PACKAGE_LIST()
+
+Exitapp
 
 
 #Q::
@@ -24,5 +25,5 @@ Return
 
 
 EXITHANDLER:
-	SALTSRVAPI_QUIT(CON_ID)		;// KIll Connection
+	SALTSRVAPI_QUIT()		;// KIll Connection
 Exitapp

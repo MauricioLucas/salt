@@ -38,10 +38,82 @@ return
 
 
 
-cb_msg_input(MSG){
- ToolTip, %MSG%   
+
+
+/*********************************************************************************
+_SALT_PACKAGES_LIST()
+________________________
+
+Currently only a demo implementation. Sends a String (PACKAGELIST) to the client script.
+**********************************************************************************
+*/
+_SALT_PACKAGES_LIST(){
+    
+PACKAGELIST =
+    (LTrim
+    packet01
+    packet02
+    packet03
+    ...
+    jojo 
+    packet containing | as char =)
+    pukat ...
+    )
+    Return, PACKAGELIST
 }
 
+
+/*********************************************************************************
+_SALT_PROCESS_MSGQUEUE()
+________________________
+
+This function loops until every MSG in the MSG BUFFER is handled.
+The Function is usually called when a new msg arrives.
+**********************************************************************************
+*/
+_SALT_PROCESS_MSGQUEUE(){
+global
+
+	if(bMESAGEPROCESS_RUNNING = true){
+		return
+	}else{
+		bMESAGEPROCESS_RUNNING := true
+	}
+	
+    
+	SALTSERVICE_COMMANDS	:= "$SALT_PACKAGES_LIST,$SALT_PACKAGES_LIST_ANSW"
+
+	While (IPC_MSG_COUNT() > 0) ; loopt solange, bis alle MSGS abgehandelt wurden.
+	{        
+		msg := IPC_MSG_POP()
+		StringSplit,PARAM,msg,|	
+		;PARAM1 = connection id
+		;PARAM2 = command
+		;PARAM3+ = params
+		if(hexascii(PARAM2) == "$SALT_PACKAGES_LIST"){
+            IPC_UPAK_ADD(IPC_UPAK_PAK_LIST,"$SALT_PACKAGES_LIST_ANSW")  ; cmd/response Type
+            IPC_UPAK_ADD(IPC_UPAK_PAK_LIST,_SALT_PACKAGES_LIST())       ; pakage list
+            IPC_UPAK_SEND(PARAM1,IPC_UPAK_PAK_LIST)
+		}else{
+			MsgBox % "SALTSERVICE: unknown command: " hexascii(PARAM2) "`n FULL MSG STRING:" msg
+		}
+	}
+	bMESAGEPROCESS_RUNNING := false
+}
+
+/**************************************************************
+All non SYS IPC Messages are handled here.
+So, here we implement our own protocol for the salt service.
+***************************************************************
+*/
+cb_msg_input(MSG){
+ _SALT_PROCESS_MSGQUEUE()
+}
+
+/**************************************************************
+Callback Function of SYS EVENT: $IPC_CONNECTION_QUIT
+***************************************************************
+*/
 cbRECV_CON_QUIT(TYPE,CON_ID,PID){
     ; the client wants to disconnect...
     MsgBox salt service is shutting down!
