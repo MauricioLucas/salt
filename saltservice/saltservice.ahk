@@ -6,15 +6,21 @@ SALT SERVICE
 #NoEnv 
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 OnExit, EXITHANDLER
-#Include, IPC.ahk
+;------------------------------------------
+#Include, Include\IPC.ahk
+#Include, Include\console.ahk
+#Include, Include\process.ahk
+;------------------------------------------
+SALT_SCRIPTNAME     := "saltservice"
+SALT_VER            := "0.1 alpha"
 
-scriptname := "saltservice"
 
 ; +++++++++++  COMMANDLINE PARAMS  ++++++++++++++++++++++++++++
 if 0 < 1    ; we need the service requester PID
 {
-    MsgBox,16,ERROR, SALT Service: Wrong initialisation! 
-    ExitApp
+    ; //MsgBox,16,ERROR, SALT Service: Wrong initialisation! 
+    ; //ExitApp
+    Gosub, CreateConsoleHandler
 }else{
     Loop, %0%       ; fill cmd params in easyer to use Vars.
     {
@@ -37,8 +43,44 @@ if(TARGET_PID){
 return
 
 
+;#################### SALT COMMANDLINE ############################
+CreateConsoleHandler:
+
+Console_Alloc()
+Console_Write("welcome to saltservice " ver "`n")
+Console_Write("----------------------------------------`nsalt>> ")
+
+Loop
+   {
+   ui := Console_GetUserInput()
+   
+   Console_Write(a_tab a_tab EXEC_CMD(ui) "`nsalt>> ")
+   }
+Return
 
 
+/*******************************
+handle input
+********************************
+*/
+EXEC_CMD(ui){
+global   
+   StringSplit,param,ui,%a_space%
+   
+   if(param1 = "install"){
+      ret := "package " param2 " not found!"
+   }else if(param1 = "exit" || param1 = "quit" || param1 = "bye"){
+      exitapp
+   }else if(param1 = "ver"){
+      ret := SALT_VER
+   }else if(param1 = "help"){
+      ret := "no help for you o.0"
+   }else{
+   ret := "unknown commad: " param1
+   }
+   Return, ret
+}
+;#################### COMMANDLINE END ############################
 
 /*********************************************************************************
 _SALT_PACKAGES_LIST()

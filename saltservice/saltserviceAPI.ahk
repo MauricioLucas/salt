@@ -4,7 +4,7 @@ date 25.03.2010
 coded by IsNull 
 *********************************************************************************
 */
-#Include, IPC.ahk
+#Include, Include\IPC.ahk
 ;namespace :: SALTSRVAPI
 SALTSRVAPI_SALTSERVICE_NAME	:= "saltservice.ahk"
 SALTSRVAPI_VER				:= "0.01 under-dev"
