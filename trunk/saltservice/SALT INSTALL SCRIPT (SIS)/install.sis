@@ -1,0 +1,16 @@
+//-------------------------
+// SALT SIS
+// this is a test SIS file
+// 
+// ------------------------
+
+#copy, \script.ahk,  \script.ahk			 	// copy a single file
+
+#copy, \scripthelper.dll, %a_windir%\system32\helper.dll 	//copy and rename a single file
+
+
+#copy, \pics,  \newpicdir 					//copys full dir into dest root.
+
+#regwrite, HKCU\software\salt\ver,  REG_SZ, "0.1alpha"		// reg hives
+
+// eof

@@ -47,36 +47,35 @@ return
 CreateConsoleHandler:
 
 Console_Alloc()
-Console_Write("welcome to saltservice " ver "`n")
+Console_Write("welcome to " SALT_SCRIPTNAME " - " SALT_VER "`n")
 Console_Write("----------------------------------------`nsalt>> ")
 
 Loop
-   {
-   ui := Console_GetUserInput()
-   
-   Console_Write(a_tab a_tab EXEC_CMD(ui) "`nsalt>> ")
-   }
+{
+    ui := Console_GetUserInput()
+    Console_Write(a_tab a_tab EXEC_CMD(ui) "`nsalt>> ")
+}
 Return
 
 
 /*******************************
-handle input
+handle CLI input
 ********************************
 */
 EXEC_CMD(ui){
-global   
-   StringSplit,param,ui,%a_space%
+global SALT_VER
+    StringSplit,param,ui,%a_space%
    
    if(param1 = "install"){
-      ret := "package " param2 " not found!"
+        ret := "package " param2 " not found!"
    }else if(param1 = "exit" || param1 = "quit" || param1 = "bye"){
-      exitapp
+        exitapp
    }else if(param1 = "ver"){
-      ret := SALT_VER
+        ret := SALT_VER
    }else if(param1 = "help"){
-      ret := "no help for you o.0"
+        ret := "no help for you o.0"
    }else{
-   ret := "unknown commad: " param1
+        ret := "unknown commad: " param1
    }
    Return, ret
 }
