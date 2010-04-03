@@ -69,6 +69,9 @@ global 	SIS_COMMAND_LIST
 						; its a folder... we have to explode it :)
 						loop, %Source_copy_path%\*.*,0,1
 						{
+							if(instr(A_LoopFileFullPath,".svn")){	; // Little hack to omit svn hidden folders o.0
+								Continue
+							}
 							StringReplace,source_data,A_LoopFileFullPath,%SIS_SOURCE_DIR%,,ALL
 							param3 := strclean(param3), param3 := (param3 = "\") ? "" : param3
 							COMPILED_SCRIPT .= cmd1 ", " source_data ", " strclean(param3) "\" A_LoopFileName "`n"
