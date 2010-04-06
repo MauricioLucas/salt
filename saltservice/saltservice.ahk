@@ -10,10 +10,23 @@ OnExit, EXITHANDLER
 #Include, Include\IPC.ahk
 #Include, Include\console.ahk
 #Include, Include\process.ahk
+#Include, Include\httpquery.ahk
+#Include, Include\yaml.ahk
 ;------------------------------------------
 SALT_SCRIPTNAME     := "saltservice"
 SALT_VER            := "0.1 alpha"
 
+SALT_CREDITS=
+(
+######  SALT TEAM  ##################################
+    HotKeyiT        yaml Parser
+    DerRaphael      webfrontend, backend strategies
+    IsNull          saltservice
+#####################################################
+)
+
+SALT_CACHE          := A_ScriptDir "\core\cache"
+SALT_RESLIST        := A_ScriptDir "\core\resources.txt"
 
 ; +++++++++++  COMMANDLINE PARAMS  ++++++++++++++++++++++++++++
 if 0 < 1    ; we need the service requester PID
@@ -57,29 +70,84 @@ Loop
 }
 Return
 
+;#################### COMMANDLINE START ############################
 
 /*******************************
 handle CLI input
 ********************************
 */
 EXEC_CMD(ui){
-global SALT_VER
+global 
     StringSplit,param,ui,%a_space%
    
-   if(param1 = "install"){
+    if(param1 = "install"){
         ret := "package " param2 " not found!"
-   }else if(param1 = "exit" || param1 = "quit" || param1 = "bye"){
+    }else if(param1 = "exit" || param1 = "quit" || param1 = "bye"){
         exitapp
-   }else if(param1 = "ver"){
+    }else if(param1 = "ver"){
         ret := SALT_VER
-   }else if(param1 = "help"){
+    }else if(param1 = "help"){
         ret := "no help for you o.0"
-   }else{
+    }else if(param1 = "update"){
+        ret := _SALT_UPDATE_CLI()
+    }else if(param1 = "download"){
+        ret := _SALT_DOWNLOAD(param2,SALT_CACHE "\dummy.exe")
+    }else if(param1 = "credits"){
+        Console_Write("`n" SALT_CREDITS "`n")
+    }else{
         ret := "unknown commad: " param1
-   }
+    }
    Return, ret
 }
 ;#################### COMMANDLINE END ############################
+
+
+_SALT_UPDATE_CLI(){
+global    
+    UPDATE_LOG := ""
+    Loop, read, % SALT_RESLIST, `n,`r
+    {
+        if(A_LoopReadLine = ""){   ;// TODO: here Continue comments too. 
+            Continue
+        }
+        Console_Write(A_LoopReadLine ":`n")
+        postdata := "data[set]=blup&data[set2][sub1]=sub1&data[set2][sub2]=sub2"
+        length := httpQuery(data, A_LoopReadLine "help", postdata)
+        VarSetCapacity(data, -1 )
+        if(!length || length = -1){
+            Console_Write("`t update failed!`n")
+            Continue
+        }
+        yml := Yaml_Init(data)
+        Console_Write("`t" Yaml_Save(yml) "`n")
+    }
+    Return, UPDATE_LOG
+}
+
+
+_SALT_DOWNLOAD(lpszUrl,dest){
+global httpQueryOps    
+
+    if(lpszUrl = "test"){
+        lpszUrl := "http://dl.securityvision.ch/4789213741029347129837/data.bin"
+    }
+
+    httpQueryOps := "updateSize"
+    data := ""
+    Console_Write("Starting downloading...`n")
+    SetTimer,SHOW_DL_PROGRESS,500
+    length   := httpQuery(data,lpszUrl)
+    if (write_bin(data,dest,length)!=1){
+       Return, "There was an Error!"
+    }else{
+        Console_Write("`t 100%`n")
+      Return, "Downloaded and saved as " dest
+    }
+}
+
+SHOW_DL_PROGRESS:
+    Console_Write("`t" Round(100 / HttpQueryFullSize * HttpQueryCurrentSize,0) "%`t"  HttpQueryCurrentSize "/" HttpQueryFullSize "`n")
+Return
 
 /*********************************************************************************
 _SALT_PACKAGES_LIST()
@@ -165,3 +233,26 @@ cbRECV_CON_QUIT(TYPE,CON_ID,PID){
 EXITHANDLER:
  ;here we handle clean exits
 ExitApp
+
+
+
+
+;-----------------------------------------------
+
+write_bin(byref bin,filename,size){
+   h := DllCall("CreateFile","str",filename,"Uint",0x40000000
+            ,"Uint",0,"UInt",0,"UInt",4,"Uint",0,"UInt",0)
+   IfEqual h,-1, SetEnv, ErrorLevel, -1
+   IfNotEqual ErrorLevel,0,ExitApp ; couldn't create the file
+   r := DllCall("SetFilePointerEx","Uint",h,"Int64",0,"UInt *",p,"Int",0)
+   IfEqual r,0, SetEnv, ErrorLevel, -3
+   IfNotEqual ErrorLevel,0, {
+      t = %ErrorLevel%              ; save ErrorLevel to be returned
+      DllCall("CloseHandle", "Uint", h)
+      ErrorLevel = %t%              ; return seek error
+   }
+   result := DllCall("WriteFile","UInt",h,"Str",bin,"UInt"
+               ,size,"UInt *",Written,"UInt",0)
+   h := DllCall("CloseHandle", "Uint", h)
+   return, 1
+}
