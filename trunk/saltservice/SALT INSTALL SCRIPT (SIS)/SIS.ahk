@@ -11,7 +11,7 @@ SIS_COMMAND_LIST	:= "#copy,#regwrite"
 ;###############################################################################
 ; START TESTING STUB
 if("" = (err := SIS_COMPILE("install.sis", SIS_COMPILED))){
-		MsgBox,64,compilation successfull, Script compiled with no errors:`n`n%SIS_COMPILED%
+		MsgBox,64,compilation successfull, SIS compiled with no errors:`n`n%SIS_COMPILED%
 		SIS_INSTALL(SIS_COMPILED)
 }else{
 		MsgBox,16,compilation fail, There are some errors:`n`n%err%`n`n-----------------------`n`n%SIS_COMPILED%
