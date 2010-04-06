@@ -137,11 +137,15 @@ global httpQueryOps
     Console_Write("Starting downloading...`n")
     SetTimer,SHOW_DL_PROGRESS,500
     length   := httpQuery(data,lpszUrl)
-    if (write_bin(data,dest,length)!=1){
-       Return, "There was an Error!"
+    if(!length || length = -1){
+        Return, "Can't download: " lpszUrl
     }else{
-        Console_Write("`t 100%`n")
-      Return, "Downloaded and saved as " dest
+        if (write_bin(data,dest,length)!=1){
+           Return, "There was an Error!"
+        }else{
+            Console_Write("`t 100%`n")
+          Return, "Downloaded and saved as " dest
+        }
     }
 }
 
