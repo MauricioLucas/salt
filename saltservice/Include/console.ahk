@@ -1,7 +1,6 @@
 ;start script as a cmd instance
 ;ahklerner - http://www.autohotkey.com/forum/topic30759.html
 Console_Alloc(){
-	MsgBox % "alloc console:" Process_GetModuleFileNameEx(Process_GetCurrentParentProcessID()) "`ninstr sucht nach:" GetFileName(COMSPEC)
 if (!instr(Process_GetModuleFileNameEx(Process_GetCurrentParentProcessID()),GetFileName(COMSPEC))){
 		If (A_IsCompiled){
 		  Run %comspec% /c ""%A_ScriptFullPath%"", , Hide	
