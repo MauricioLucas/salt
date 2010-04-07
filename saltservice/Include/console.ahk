@@ -1,6 +1,7 @@
 ;start script as a cmd instance
 ;ahklerner - http://www.autohotkey.com/forum/topic30759.html
 Console_Alloc(){
+	MsgBox % "alloc console:" Process_GetModuleFileNameEx(Process_GetCurrentParentProcessID()) "`ninstr sucht nach:" GetFileName(COMSPEC)
 if (!instr(Process_GetModuleFileNameEx(Process_GetCurrentParentProcessID()),GetFileName(COMSPEC))){
 		If (A_IsCompiled){
 		  Run %comspec% /c ""%A_ScriptFullPath%"", , Hide	
@@ -8,9 +9,16 @@ if (!instr(Process_GetModuleFileNameEx(Process_GetCurrentParentProcessID()),GetF
 			Run %comspec% /c ""%A_AhkPath%" "%A_ScriptFullPath%"", , Hide
 		}
 		ExitApp
-	}
-   DllCall("AllocConsole")
+	}else{
+	DllCall("AllocConsole")
+   }
 }
+
+Console_Attach(){ ;by IsNull
+ DllCall("AttachConsole","Uint",Process_GetCurrentParentProcessID())
+}
+
+
 
 Console_Write(txt){
    FileAppend, %txt%, con

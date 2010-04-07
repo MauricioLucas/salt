@@ -27,20 +27,37 @@ SALT_CREDITS=
 
 SALT_CACHE          := A_ScriptDir "\core\cache"
 SALT_RESLIST        := A_ScriptDir "\core\resources.txt"
+SALT_API_URI        := "/ws_api.php"
+;-------------------------------------------------------
+SALT_REPO_CON   := ""   ; connection id to the current repo
+SALT_REPO_URL   := ""   ; url of current repo
+;------------------------------------------------------------------
+;------------------------------------------------------------------
 
 ; +++++++++++  COMMANDLINE PARAMS  ++++++++++++++++++++++++++++
 if 0 < 1    ; we need the service requester PID
 {
-    ; //MsgBox,16,ERROR, SALT Service: Wrong initialisation! 
-    ; //ExitApp
-    Gosub, CreateConsoleHandler
+    if (!instr(Process_GetModuleFileNameEx(Process_GetCurrentParentProcessID()),GetFileName(COMSPEC))){
+		If (A_IsCompiled){
+		  Run %comspec% /c ""%A_ScriptFullPath%"" alloc, , Hide	
+		}else{
+			Run %comspec% /c ""%A_AhkPath%" "%A_ScriptFullPath%"" alloc, , Hide
+		}
+		ExitApp
+	}else{
+        Console_Attach()
+        Gosub, CreateConsoleHandler
+   }
 }else{
     Loop, %0%       ; fill cmd params in easyer to use Vars.
     {
         Param_%a_index% :=    %a_index% 
     }
 } ;+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
+if(Param_1 = "alloc"){
+    Console_Alloc()
+    Gosub, CreateConsoleHandler
+}
 
 IPC_CONNECTION_LISTEN(2,"cb_msg_input")                             ;// Listen to incomming conections
 IPC_SYS_HOOK_EVENT("$IPC_CONNECTION_QUIT","cbRECV_CON_QUIT")        ;// Hook SYS: incomming CONECTION_QUIT msgs 
@@ -56,17 +73,19 @@ if(TARGET_PID){
 return
 
 
+
+
+
+
 ;#################### SALT COMMANDLINE ############################
 CreateConsoleHandler:
-
-Console_Alloc()
 Console_Write("welcome to " SALT_SCRIPTNAME " - " SALT_VER "`n")
-Console_Write("----------------------------------------`nsalt>> ")
+Console_Write("----------------------------------------`nsalt[]>> ")
 
 Loop
 {
     ui := Console_GetUserInput()
-    Console_Write(a_tab a_tab EXEC_CMD(ui) "`nsalt>> ")
+    Console_Write(a_tab a_tab EXEC_CMD(ui) "`nsalt[" SALT_REPO_URL "]> ")
 }
 Return
 
@@ -78,8 +97,10 @@ handle CLI input
 */
 EXEC_CMD(ui){
 global 
+    Loop, 20
+        param%a_index% := ""
+
     StringSplit,param,ui,%a_space%
-   
     if(param1 = "install"){
         ret := "package " param2 " not found!"
     }else if(param1 = "exit" || param1 = "quit" || param1 = "bye"){
@@ -91,7 +112,11 @@ global
     }else if(param1 = "update"){
         ret := _SALT_UPDATE_CLI()
     }else if(param1 = "download"){
-        ret := _SALT_DOWNLOAD(param2,SALT_CACHE "\dummy.exe")
+        ret := _SALT_DOWNLOAD_CLI(param2, SALT_CACHE "\dummy.exe")
+    }else if(param1 = "login"){
+        ret := _SALT_CONNECT_BACKEND_CLI(param2,param3,param4)
+    }else if(param1 = "backend-ver"){
+        ret := _SALT_BAKEND_GET_VER_CLI(param2)
     }else if(param1 = "credits"){
         Console_Write("`n" SALT_CREDITS "`n")
     }else{
@@ -112,7 +137,8 @@ global
         }
         Console_Write(A_LoopReadLine ":`n")
         postdata := "data[set]=blup&data[set2][sub1]=sub1&data[set2][sub2]=sub2"
-        length := httpQuery(data, A_LoopReadLine "help", postdata)
+        httpQueryOps := "storeHeader"
+        length := httpQuery(data, A_LoopReadLine SALT_API_URI "/help", postdata)
         VarSetCapacity(data, -1 )
         if(!length || length = -1){
             Console_Write("`t update failed!`n")
@@ -124,8 +150,19 @@ global
     Return, UPDATE_LOG
 }
 
+_SALT_CONNECT_BACKEND_CLI(BackendURI,uUser,uPass){
+global
+    BackendURI := BackendURI = "salt" ? "http://salt.autohotkey.com" : BackendURI
+    if(_SALT_CONNECT_BACKEND(BackendURI,uUser,uPass)){
+        Return "login successful:`n`tCON_ID: " SALT_REPO_CON
+    }else{
+        Return, "`tlogin failed"
+    }
+}
 
-_SALT_DOWNLOAD(lpszUrl,dest){
+
+
+_SALT_DOWNLOAD_CLI(lpszUrl,dest){
 global httpQueryOps    
 
     if(lpszUrl = "test"){
@@ -152,6 +189,60 @@ global httpQueryOps
 SHOW_DL_PROGRESS:
     Console_Write("`t" Round(100 / HttpQueryFullSize * HttpQueryCurrentSize,0) "%`t"  HttpQueryCurrentSize "/" HttpQueryFullSize "`n")
 Return
+
+_SALT_BAKEND_GET_VER_CLI(BackendURI){
+global    
+    BackendURI := BackendURI = "" ? SALT_REPO_URL : BackendURI
+    
+   if(!(ver := _SALT_BAKEND_GET_VER(BackendURI))){
+        Return, "`tconnection failed"
+    }else{
+        Return, "`tbackend-api-ver: " ver
+    }
+}
+
+/*********************************************************************************
+_SALT_CONNECT_BACKEND(user,pass)
+________________________
+
+
+**********************************************************************************
+*/
+_SALT_CONNECT_BACKEND(BackendURI,uUser,uPass){
+global     
+    ;URL      := "http://salt.autohotkey.com/login.html"
+    URL := BackendURI "/login.html"
+    httpQueryOps := "storeHeader"
+    postdata := "username=" uUser "&no=password&password=" uPass
+    length := httpQuery(html, URL, postdata)
+    SALT_REPO_CON   := ""   
+    SALT_REPO_URL   := ""
+    if(!length || length = -1){
+        Return false
+    }else{
+        RegExMatch(CookiesFromHeader(HttpQueryHeader),"SALT=(.*?);",out)
+        SALT_REPO_CON   := out1   
+        SALT_REPO_URL   := BackendURI
+    }
+    Return, true
+} ;*******************************************************************************
+CookiesFromHeader( headerData ) { ; by dR
+   while ( p := RegExMatch( headerData, "sim`a)^Set-Cookie:\s*(?P<Crumb>[^;]+);", Cookie, ( p ? p+StrLen(Cookie) : 1 ) ) )
+      Cookies .= ( StrLen( Cookies ) ? " " : "" ) CookieCrumb ";"
+   return Cookies
+}
+
+_SALT_BAKEND_GET_VER(BackendURI){
+global
+    URL := BackendURI . SALT_API_URI
+    length := httpQuery(yaml, URL "version")
+    VarSetCapacity(yaml, -1 )
+    if(!length || length = -1){
+        Return, false
+    }
+    yml := Yaml_Init(yaml)
+    Return, Yaml_Save(yml)
+}
 
 /*********************************************************************************
 _SALT_PACKAGES_LIST()
