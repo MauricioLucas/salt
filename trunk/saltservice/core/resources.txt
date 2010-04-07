@@ -1,1 +1,1 @@
-http://salt.autohotkey.com/ws_api.php/
+http://salt.autohotkey.com
