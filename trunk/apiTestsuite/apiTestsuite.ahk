@@ -12,14 +12,18 @@
 
 Gosub, initTestCases
 
-Loop,Parse,testCases,`,,%A_Space%
+Loop, Parse, testCases, `,, %A_Space%
 {
 	RegExMatch( A_LoopField, "(?P<Name>\w+)=(?P<Counts>\d+)", test )
 	Loop, % testCounts*1
 	{
 		postData := %testName%%A_Index%
-		data := postQueryToVar( postData ), length := ErrorLevel
-		msgbox,0,Test: %testName% Iteration %A_index% of %testCounts% ( received data length: %Length% ), % Data
+		data     := postQueryToVar( postData )
+		length   := ErrorLevel
+
+		msgbox, 0
+				, "%testName%" - %A_index% of %testCounts% ( received length: %Length% )
+				, % Data	
 	}
 }
 
@@ -75,13 +79,13 @@ saltApi:
 testCases := "version=2, login=3"
 Return
 
-postQueryToVar( postdata="" )
+postQueryToVar( post="" )
 {
 
-	static url := "http://salt.ahk.com/ws_api.php?dumpArray=1"
-	static headers:="Content-type: text/x-yaml`nContent-Length: "
+	static url    := "http://salt.autohotkey.com/ws_api.php"
+	static header := "Content-type: text/x-yaml`nContent-Length: "
 	
-	length := httpQuery( data, url, postdata, headers strlen(postdata) )
+	length := httpQuery( data, url, post, header strlen( post ) )
 	VarSetCapacity( data, -1 )
 	ErrorLevel := Length
 	
