@@ -123,12 +123,12 @@ yaml
 gamma: 
   mylist:
     - test
-    - 'test it'
-    - 'test'
+    - test it
+    - test
 anotherlist:
   - test
   - test2
-  - 'test 3'
+  - test 3
 ---
 other:
   _1:1
@@ -137,13 +137,13 @@ other:
     _2:2
   'zu ende': [ first, second]
 )
-Yaml_Init(yaml:="x:\test.yml") ;see below, passing a dictionary pointer to Yaml_Get & Yaml_Set is faster than filepath !!!
+;~ Yaml_Init(yaml:="x:\test.yml") ;see below, passing a dictionary pointer to Yaml_Get & Yaml_Set is faster than filepath !!!
 
 
-MsgBox % Yaml_Get(yaml) ;returns main sections separated by ,
-		. "`n" Yaml_Get(yaml,0) ;count main sections
-		. "`n" firstsection:=Yaml_Get(yaml,1) ;first section
-MsgBox % Yaml_Dump(yaml,var)
+;~ MsgBox % Yaml_Get(yaml) ;returns main sections separated by ,
+;~ 		. "`n" Yaml_Get(yaml,0) ;count main sections
+;~ 		. "`n" firstsection:=Yaml_Get(yaml,1) ;first section
+;~ MsgBox % Yaml_Dump(yaml,var)
 ;~ MsgBox % Yaml_Dump(yaml,othervar,"data 1")
 ;~ MsgBox % Yaml_Get(yaml,firstsection ".0") ;count of items in first subsection
 ;~ MsgBox % Yaml_Get(yaml,firstsection ".1")
@@ -321,7 +321,7 @@ Yaml_Dump(pdic,ByRef Output,key=""){
 						Output .= "`n"
 						Loop % Yaml_Get(pdic,_key "." key1 ".0"){
 							value:=Yaml_Get(pdic,_key "." key1 "." A_Index)
-							Output .= recurse "  - " (RegExMatch(value,"^\w+$") ? value : "'" value "'") "`n"
+							Output .= recurse "  - " value "`n"
 						}
 						Continue
 					} else Output .= "`n"
@@ -467,7 +467,6 @@ Yaml_Init(Yaml_File="?"){
 		Loop,%Yaml_File%
 			Yaml_File:=A_LoopFileLongPath
 		return Yaml_Get(pdic,Yaml_File)
-;~ 		DllCall(NumGet(NumGet(pDic+0)+68), "UInt",pDic) ;delete all keys
 	}
 	If FileExist(Yaml_File){
 		Loop,%Yaml_File%
@@ -487,22 +486,18 @@ Yaml_Init(Yaml_File="?"){
 		If A_LoopField=
 			Continue
 		if !create
-			Key1:="",Key2:="",Item:=""
-		If (MainItem0="" || (!create && !RegExMatch(A_LoopField,"^\s+\w+:") && !RegExMatch(A_LoopField,"^\s+'.+'\s?:")
-		  && !RegExMatch(A_LoopField,"^\s\s\s+-\s'.+'\s?$") && !RegExMatch(A_LoopField,"^\s\s\s+-\s.\w+\s?$"))){
+			Key1:="",Key2:="",Key3:="",Item:=""
+		If (MainItem0="" || (!create && !RegExMatch(A_LoopField,"^\s"))){
 			If !RegExMatch(A_LoopField,"^(\w+)\s?:\s?(.*)\s*$",MainItem)
 				If !RegExMatch(A_LoopField,"^'(.+)'\s?:\s?(.*)\s*$",MainItem){
 					Key1=
-					RegExMatch(A_LoopField,"^\s+-\s(\w+)\s?$",Key)
-					If Key1=
-						RegExMatch(A_LoopField,"^\s+-\s'(.+)'\s?$",Key)
+					RegExMatch(A_LoopField,"^\s+-\s(.*)$",Key)
 					If (Key1!=""){
 						count:=Yaml_Get(_pdic,MainItem0 ".0")
 						count++
 						Yaml_Assign(_pdic,MainItem0 "." count,Key1)
 						Yaml_Assign(_pdic,MainItem0 ".0", count)
 						item:=Yaml_Get(_pdic,MainItem0)
-						key1:=(RegExMatch(key1,"^\s?\w+\s?$") ? key1 : "'" key1 "'")
 						Yaml_Assign(_pdic,MainItem0,item="" ? Key1 : item "," key1)
 						Continue
 					}
@@ -520,22 +515,16 @@ Yaml_Init(Yaml_File="?"){
 			MainItem:="",MainItem1:="",MainItem2:="",LastLine:=""
 			Continue
 		}
-;~ 		MsgBox % Yaml_Get(_pdic,0)
 		If (!create){
 			Key1=
-			RegExMatch(A_LoopField,"^\s+-\s(\w+)\s?$",Key)
-			If Key1=
-				RegExMatch(A_LoopField,"^\s+-\s'(.+)'\s?$",Key)
+			RegExMatch(A_LoopField,"^\s+-\s(.*)$",Key)
 			If (Key1!=""){
 				count:=Yaml_Get(_pdic,LastItem ".0")
 				count++
-;~ 				MsgBox % count "`n" LastItem "`n" Yaml_Get(_pdic,LastItem)
 				Yaml_Assign(_pdic,LastItem "." count,Key1)
 				Yaml_Assign(_pdic,LastItem ".0", count)
 				item:=Yaml_Get(_pdic,LastItem)
-				key1:=(RegExMatch(Key1,"^\s?\w+\s?$") ? key1 : "'" key1 "'")
 				Yaml_Assign(_pdic,LastItem,item="" ? Key1 : item "," key1)
-;~ 				MsgBox % Yaml_Get(_pdic,LastItem)
 				Continue
 			}
 			Loop 3
@@ -546,14 +535,10 @@ Yaml_Init(Yaml_File="?"){
 					 Key%A_Index%=
 				RegExMatch(A_LoopField,"^(\s+)'(.+)':\s?(.*)\s?$",Key)
 			}
-;~ 			MsgBox % A_LoopField "`n" Key2
-			If (Key2=""){
-				
-			}
 			depth:=Round(Strlen(Key1)/2,0)
 			MainItem%depth%:=Key2
 			Item:=MainItem0
-			While % (i:=A_Index+1 && depth>A_Index)
+			While % ((i:=A_Index) && depth>A_Index)
 				Item.= "." . MainItem%i%
 			MainItem:=Yaml_Get(_pdic,Item)
 			count:=Yaml_Get(_pdic,Item . ".0")
@@ -563,19 +548,8 @@ Yaml_Init(Yaml_File="?"){
 			Yaml_Assign(_pdic,Item,MainItem . (MainItem="" ? "" : ",") . (RegExMatch(Key2,"^\s?\w+\s?$") ? key2 : "'" key2 "'"))
 			Item.="." . key2
 			LastItem:=Item
-			If RegExMatch(Key3,"^\s*$")
+			If RegExMatch(Key3,"^\s+$")
 				Continue
-			/*
-			If RegExMatch(Key3,"^\s*\[.+\]\s*$"){ ;!!!!!!
-				While RegExMatch(Key3,"^\s*\[")
-					StringTrimLeft,Key3,Key3,1
-				While RegExMatch(Key3,"\]\s*$")
-					StringTrimRight,Key3,Key3,1
-				Yaml_Assign(_pdic,Item,Key3)
-				Loop,Parse,Key3,`,,%A_Space%
-					Yaml_Assign(_pdic,Item "." A_Index,A_LoopField),Yaml_Assign(_pdic,Item ".0", A_Index)
-			} else 
-			*/
 			Yaml_Assign(_pdic,Item,key3)
 		} else 
 			Yaml_Assign(_pdic,Item,Yaml_Get(_pdic,Item) . A_LoopField)
