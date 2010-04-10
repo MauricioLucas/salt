@@ -76,10 +76,10 @@ SALT_GUI_MAIN:
     Gui, Add, ListBox, x30 yp+15 w150 h50 vVisible HwndVisible_ID gLB_Visible, Netzwerk|STdLib|Games|Tools
     Gui, Add, ListBox, xp+170 yp w150 h50 vInVisible hwndInVisible_ID gLB_InVisible
 
-    GUI, Add, TEXT, x500 w80 xp+170 yp-15, suchen:
+    GUI, Add, TEXT, x500 w80 xp+170 yp-15, search:
     GUI, Add, EDIT, xp+40 yp w150 vFILTER_SEARCH gFILTER_SEARCH
     GUI, Add, Checkbox, xp yp+30 vCHK_PK_NAME, Paket Name
-    GUI, Add, Checkbox, xp yp+20 vCHK_PK_DESCR, Beschreibung
+    GUI, Add, Checkbox, xp yp+20 vCHK_PK_DESCR, Description
     ;-----------------------------    
     GUI, add, ListView, x20 yp+40 w300 h330 vREPO_BROWSER_LIST, Package Name | Type
     GUI, add, text, xp+320 yp, Selected Package Detail:
@@ -88,9 +88,14 @@ SALT_GUI_MAIN:
     GUI, Tab, 2
     GUI, add, ListView, x20 y50 w550 h350 vINSTALLED_BROWSER_LIST, Package Name | Version | Type
     
-    
+    ;//#######---------- Repository Manager  -----------#######
+    GUI, Tab, 3
+    GUI, add, ListView, x20 y50 w550 h350 vREPOSITORY_LIST, Repo URL | Status
+    LV_ModifyCol(1,400)
     GUI, show, , % SALT_SCRIPTNAME " " SALT_VER
 
+    yml := SALT_READ_REPOSITORYS()
+    SALT_G_REPOSITORYS_UPDATE(yml)
 return
 
 GuiClose:
@@ -133,6 +138,49 @@ FILTER_SEARCH:
 return
 
 
+/************************************************************************
+SALT_READ_REPOSITORYS()
+
+Reads the local plain text file and imports repos in a 
+yml Repo Object.
+*************************************************************************
+*/
+SALT_READ_REPOSITORYS(){
+global
+    YML_REPOSITORY :=   Yaml_Init("") ;create empty yaml
+    cnt := 0
+
+    Loop, read, % SALT_RESLIST, `n,`r
+    {
+        if(A_LoopReadLine = ""){   ;// TODO: here Continue comments too. 
+            Continue
+        }
+        ++cnt
+        Yaml_Add(YML_REPOSITORY,"repositorys.repo" cnt ".url",A_LoopReadLine) 
+        Yaml_Add(YML_REPOSITORY,"repositorys.repo" cnt ".status","unchecked") 
+    }
+
+    Return, YML_REPOSITORY
+} ;*************************************************************************
+
+SALT_G_REPOSITORYS_UPDATE(YML_REPOSITORY){
+    Loop, % Yaml_GET(YML_REPOSITORY,"repositorys.0") 
+    {
+        URL := Yaml_GETs(YML_REPOSITORY,"repositorys.repo" a_index ".url") 
+        STA := Yaml_GETs(YML_REPOSITORY,"repositorys.repo" a_index ".status") 
+        LV_Add("",URL,STA)
+    }
+}
+
+Yaml_GETs(yml,key=""){
+    str := Yaml_GET(yml,key) 
+    if(substr(str,1,1) = "'"){
+        StringTrimLeft,str,str,1
+        StringTrimRight,str,str,1
+    }
+    Return, str
+}
+/*
 _SALT_UPDATE_CLI(){
 global    
     UPDATE_LOG := ""
@@ -206,6 +254,8 @@ global
         Return, "`tbackend-api-ver: " ver
     }
 }
+*/
+
 
 /*********************************************************************************
 _SALT_CONNECT_BACKEND(user,pass)

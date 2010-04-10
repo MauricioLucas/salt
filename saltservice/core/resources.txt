@@ -1,1 +1,2 @@
 http://salt.autohotkey.com
+http://salt.securityvison.ch
