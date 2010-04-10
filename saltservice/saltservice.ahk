@@ -14,18 +14,20 @@ OnExit, EXITHANDLER
 #Include, Include\yaml.ahk
 ;------------------------------------------
 SALT_SCRIPTNAME     := "saltservice"
-SALT_VER            := "0.1 alpha"
+SALT_VER            := "0.2 alpha"
 
 SALT_CREDITS=
 (
 ######  SALT TEAM  ##################################
-    HotKeyiT        yaml Parser
+    AutoHotKeyiT    yaml Parser
     DerRaphael      webfrontend, backend strategies
     IsNull          saltservice
 #####################################################
 )
 
 SALT_CACHE          := A_ScriptDir "\core\cache"
+SALT_DATA_P	        := A_ScriptDir "\data"
+SALT_IMAGES_P	    := SALT_DATA_P "\images"
 SALT_RESLIST        := A_ScriptDir "\core\resources.txt"
 SALT_API_URI        := "/ws_api.php"
 ;-------------------------------------------------------
@@ -35,96 +37,100 @@ SALT_REPO_URL   := ""   ; url of current repo
 ;------------------------------------------------------------------
 
 ; +++++++++++  COMMANDLINE PARAMS  ++++++++++++++++++++++++++++
-if 0 < 1    ; we need the service requester PID
+if 0 < 1
 {
-    if (!instr(Process_GetModuleFileNameEx(Process_GetCurrentParentProcessID()),GetFileName(COMSPEC))){
-		If (A_IsCompiled){
-		  Run %comspec% /c ""%A_ScriptFullPath%"" alloc, , Hide	
-		}else{
-			Run %comspec% /c ""%A_AhkPath%" "%A_ScriptFullPath%"" alloc, , Hide
-		}
-		ExitApp
-	}else{
-        Console_Attach()
-        Gosub, CreateConsoleHandler
-   }
+    Gosub, SALT_GUI_MAIN
 }else{
     Loop, %0%       ; fill cmd params in easyer to use Vars.
     {
         Param_%a_index% :=    %a_index% 
     }
+    IPC_CONNECTION_LISTEN(2,"cb_msg_input")                             ;// Listen to incomming conections
+    IPC_SYS_HOOK_EVENT("$IPC_CONNECTION_QUIT","cbRECV_CON_QUIT")        ;// Hook SYS: incomming CONECTION_QUIT msgs 
+
+    Process, Exist, %Param_1%                                           ;// caller submits his own PID/ProcName as cmd param
+    TARGET_PID := errorlevel
+    if(TARGET_PID){
+        connection_id := IPC_CONNECTION_CONNECT(TARGET_PID)             ;// Connect to the caller PID
+    }else{
+        MsgBox,16,%scriptname%, Expected a valid PID, but got %TARGET_PID%! Saltservice is shutting down.
+        Exitapp
+    }
 } ;+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-if(Param_1 = "alloc"){
-    Console_Alloc()
-    Gosub, CreateConsoleHandler
-}
-
-IPC_CONNECTION_LISTEN(2,"cb_msg_input")                             ;// Listen to incomming conections
-IPC_SYS_HOOK_EVENT("$IPC_CONNECTION_QUIT","cbRECV_CON_QUIT")        ;// Hook SYS: incomming CONECTION_QUIT msgs 
-
-Process, Exist, %Param_1%                                           ;// caller submits his own PID/ProcName as cmd param
-TARGET_PID := errorlevel
-if(TARGET_PID){
-    connection_id := IPC_CONNECTION_CONNECT(TARGET_PID)             ;// Connect to the caller PID
-}else{
-    MsgBox,16,%scriptname%, Expected a valid PID, but got %TARGET_PID%! Saltservice is shutting down.
-    Exitapp
-}
 return
 
 
 
+SALT_GUI_MAIN:
 
+    GUI, add, Tab2, w600 h500,  Browse Repository|Installed Packages|Manage Repositorys
+    
+    ;//#######---------- Repo Browser -----------#######
+    GUI, Tab, 1
+    
+    ;----------------------------- Filter Controls
+    GUI, add, Groupbox,x20 y50 w550 h85, Filter
+    GUI, Add, Picture,xp+35 yp-5 , % SALT_IMAGES_P "\search_icon_small.png"
+    GUI, Add, TEXT, xp yp+20, Shown Types:
+    GUI, Add, TEXT, xp+170 yp, Hidden Types:
+    Gui, Add, ListBox, x30 yp+15 w150 h50 vVisible HwndVisible_ID gLB_Visible, Netzwerk|STdLib|Games|Tools
+    Gui, Add, ListBox, xp+170 yp w150 h50 vInVisible hwndInVisible_ID gLB_InVisible
 
+    GUI, Add, TEXT, x500 w80 xp+170 yp-15, suchen:
+    GUI, Add, EDIT, xp+40 yp w150 vFILTER_SEARCH gFILTER_SEARCH
+    GUI, Add, Checkbox, xp yp+30 vCHK_PK_NAME, Paket Name
+    GUI, Add, Checkbox, xp yp+20 vCHK_PK_DESCR, Beschreibung
+    ;-----------------------------    
+    GUI, add, ListView, x20 yp+40 w300 h330 vREPO_BROWSER_LIST, Package Name | Type
+    GUI, add, text, xp+320 yp, Selected Package Detail:
+    
+    ;//#######---------- Installed Packages Browser -----------#######
+    GUI, Tab, 2
+    GUI, add, ListView, x20 y50 w550 h350 vINSTALLED_BROWSER_LIST, Package Name | Version | Type
+    
+    
+    GUI, show, , % SALT_SCRIPTNAME " " SALT_VER
 
-;#################### SALT COMMANDLINE ############################
-CreateConsoleHandler:
-Console_Write("welcome to " SALT_SCRIPTNAME " - " SALT_VER "`n")
-Console_Write("----------------------------------------`nsalt[]>> ")
+return
 
-Loop
-{
-    ui := Console_GetUserInput()
-    Console_Write(a_tab a_tab EXEC_CMD(ui) "`nsalt[" SALT_REPO_URL "]> ")
-}
-Return
+GuiClose:
+Exitapp
 
-;#################### COMMANDLINE START ############################
+LB_Visible:
+If (A_GuiEvent = "DoubleClick"){
+	NewItemList := ""
+	ControlGet, ItemList, List,,, ahk_id %Visible_ID%
+	Loop, parse, ItemList, `n
+	{
+		if (a_index !=  A_EventInfo){
+			NewItemList .= A_LoopField . "|"
+		}else{
+			GuiControl,,InVisible,%A_LoopField%
+		}
+	}
+	GuiControl,,Visible,|%NewItemList%
+	;SESAM_GUI_PUT_GPK(1)
+	}
+return
 
-/*******************************
-handle CLI input
-********************************
-*/
-EXEC_CMD(ui){
-global 
-    Loop, 20
-        param%a_index% := ""
-
-    StringSplit,param,ui,%a_space%
-    if(param1 = "install"){
-        ret := "package " param2 " not found!"
-    }else if(param1 = "exit" || param1 = "quit" || param1 = "bye"){
-        exitapp
-    }else if(param1 = "ver"){
-        ret := SALT_VER
-    }else if(param1 = "help"){
-        ret := "no help for you o.0"
-    }else if(param1 = "update"){
-        ret := _SALT_UPDATE_CLI()
-    }else if(param1 = "download"){
-        ret := _SALT_DOWNLOAD_CLI(param2, SALT_CACHE "\dummy.exe")
-    }else if(param1 = "login"){
-        ret := _SALT_CONNECT_BACKEND_CLI(param2,param3,param4)
-    }else if(param1 = "backend-ver"){
-        ret := _SALT_BAKEND_GET_VER_CLI(param2)
-    }else if(param1 = "credits"){
-        Console_Write("`n" SALT_CREDITS "`n")
-    }else{
-        ret := "unknown commad: " param1
-    }
-   Return, ret
-}
-;#################### COMMANDLINE END ############################
+LB_InVisible:
+If (A_GuiEvent = "DoubleClick"){
+	NewItemList := ""
+	ControlGet, ItemList, List,,, ahk_id %InVisible_ID%
+	Loop, parse, ItemList, `n
+	{
+		if (a_index !=  A_EventInfo){
+			NewItemList .= A_LoopField . "|"
+		}else{
+			GuiControl,,Visible,%A_LoopField%
+		}
+	}
+	GuiControl,,InVisible,|%NewItemList%
+	;SESAM_GUI_PUT_GPK(1)
+	}
+return
+FILTER_SEARCH:
+return
 
 
 _SALT_UPDATE_CLI(){
