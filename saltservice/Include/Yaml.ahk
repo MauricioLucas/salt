@@ -1,6 +1,3 @@
-yaml:=Yaml_Init("X:\testYamlMarkup.ahk")
-Yaml_Dump(yaml,var)
-MsgBox % var
 ;: Title: Yaml Parser by HotKeyIt
 
 ;
@@ -289,11 +286,10 @@ Yaml_Dump(pdic,ByRef Output,key=""){
 		}
 	if (pdic){
 		If (key=""){
-			Output:="yaml`n"
 			Loop % Yaml_Get(pdic,0)
 			{
 				mainkey:=Yaml_Get(pdic,A_Index)
-				Output .= Yaml_Get(pdic,mainkey ".")="" ? "" : Yaml_Get(pdic,mainkey ".") "`n" ;"---`r`n"
+				Output .= Yaml_Get(pdic,mainkey ".")="" ? "" : Yaml_Get(pdic,mainkey ".") "`n"
 				value:=Yaml_Get(pdic,mainkey)
 				Output .= (RegExMatch(mainkey,"^\w+$") ? mainkey : ("'" mainkey "'")) ":"
 				if (sub:=Yaml_Get(pdic,mainkey "." 1)){
@@ -317,6 +313,7 @@ Yaml_Dump(pdic,ByRef Output,key=""){
 			} else _key:=key
 			Loop % Yaml_Get(pdic,_key "." 0){
 				key1:=Yaml_Get(pdic,_key "." A_Index)
+				Output .= Yaml_Get(pdic,_key "." key1 ".")="" ? "" : Yaml_Get(pdic,_key "." key1 ".") "`n"
 				value:=Yaml_Get(pdic,_key "." key1)
 				Output .= recurse (RegExMatch(key1,"^\w+$") ? key1 : ("'" key1 "'")) ":"
 				if (sub:=Yaml_Get(pdic,_key "." key1 ".1")){
@@ -417,9 +414,7 @@ Yaml_Set(pdic,key1="",key2=""){
 		}
 	If (pdic){
 		If !Yaml_Exist(pdic,key1){
-;~ 			MsgBox % key1
 			Yaml_Add(pdic,key1,key2)
-;~ 			MsgBox
 			return
 		}
 		Yaml_Assign(pdic,key1,key2)
@@ -504,7 +499,7 @@ Yaml_Init(Yaml_File="?"){
 						Yaml_Assign(_pdic,MainItem0,item="" ? Key1 : item "," key1)
 						Continue
 					}
-					LastLine:=A_LoopField
+					LastLine.=A_LoopField "`n"
 					Continue
 				}
 			MainItem0:=MainItem1
@@ -514,6 +509,8 @@ Yaml_Init(Yaml_File="?"){
 			Yaml_Assign(_pdic,0,ItemCount)
 			Yaml_Assign(_pdic,ItemCount,MainItem0)
 			Yaml_Assign(_pdic,MainItem0,MainItem2)
+			If (SubStr(LastLine,0)="`n")
+				StringTrimRight,LastLine,LastLine,1
 			Yaml_Assign(_pdic,MainItem0 ".",LastLine)
 			MainItem:="",MainItem1:="",MainItem2:="",LastLine:=""
 			Continue
@@ -538,6 +535,12 @@ Yaml_Init(Yaml_File="?"){
 					 Key%A_Index%=
 				RegExMatch(A_LoopField,"^(\s+)'(.+)':\s?(.*)\s?$",Key)
 			}
+			If (Key2=""){
+				LastLine.=A_LoopField "`n"
+				Continue
+			}
+			If (SubStr(LastLine,0)="`n")
+				StringTrimRight,LastLine,LastLine,1
 			depth:=Round(Strlen(Key1)/2,0)
 			MainItem%depth%:=Key2
 			Item:=MainItem0
@@ -552,6 +555,8 @@ Yaml_Init(Yaml_File="?"){
 			Item.="." . key2
 			LastItem:=Item
 			Yaml_Assign(_pdic,Item,key3)
+			Yaml_Assign(_pdic,Item . ".",LastLine)
+			LastLine=
 		} else 
 			Yaml_Assign(_pdic,Item,Yaml_Get(_pdic,Item) . A_LoopField)
 		If RegExMatch(Key3,"^\s*""")
