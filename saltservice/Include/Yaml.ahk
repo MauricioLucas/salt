@@ -1,3 +1,6 @@
+yaml:=Yaml_Init("X:\testYamlMarkup.ahk")
+Yaml_Dump(yaml,var)
+MsgBox % var
 ;: Title: Yaml Parser by HotKeyIt
 
 ;
@@ -548,8 +551,6 @@ Yaml_Init(Yaml_File="?"){
 			Yaml_Assign(_pdic,Item,MainItem . (MainItem="" ? "" : ",") . (RegExMatch(Key2,"^\s?\w+\s?$") ? key2 : "'" key2 "'"))
 			Item.="." . key2
 			LastItem:=Item
-			If RegExMatch(Key3,"^\s+$")
-				Continue
 			Yaml_Assign(_pdic,Item,key3)
 		} else 
 			Yaml_Assign(_pdic,Item,Yaml_Get(_pdic,Item) . A_LoopField)
