@@ -513,6 +513,7 @@ Yaml_Init(Yaml_File="?"){
 				StringTrimRight,LastLine,LastLine,1
 			Yaml_Assign(_pdic,MainItem0 ".",LastLine)
 			MainItem:="",MainItem1:="",MainItem2:="",LastLine:=""
+			LastItem:=MainItem0
 			Continue
 		}
 		If (!create){
