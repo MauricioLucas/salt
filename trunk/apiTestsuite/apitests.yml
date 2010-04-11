@@ -1,0 +1,122 @@
+%yaml 1.2
+---
+'SALT API command style variations':
+  testYamls:
+    'version variant 1':
+      saltApi:
+        cmd: version
+    'version variant 2':
+      saltApi:
+        version:
+    'login variant 1':
+      saltApi:
+        cmd: login
+        param_0: user
+        param_1: pass
+    'login variant 2':
+      saltApi:
+        cmd: login
+        username: user
+        password: pass
+    'login variant 3':
+      saltApi:
+        login:
+          username: user
+          password: pass
+  testSuite:
+'SALT API generic purpose commands test':
+  testYamls:
+    version:
+      saltApi:
+        version:
+    help:
+      saltApi:
+        help:
+    login:
+      saltApi:
+        login:
+          username: user
+          password: pass
+  testSuite:
+'SALT API Authentification Test':
+  testYamls:
+    'valid login':
+      saltApi:
+        login:
+          username: testuser
+          password: secretPassword
+    version:
+      saltApi:
+        version:
+    logout:
+      saltApi:
+        logout:
+    'invalid login':
+      saltApi:
+        login:
+          username: hacker
+          password: 1337
+  testSuite:
+    'test 1':
+      yaml: version
+      info: Get standard version info and a cookie from server
+      'expected result':
+        salt:
+          ack: success
+          version:
+    'test 2':
+      yaml: valid login
+      info: Login to services using testuser
+      'expected result':
+        salt:
+          ack: success
+        debug:
+          user:
+            authenticated: 'true'
+    'test 3':
+      yaml: version
+      info: Get standard version info as logged in user
+      'expected result':
+        salt:
+          ack: success
+        debug:
+          user:
+            authenticated: 'true'
+    'test 4':
+      yaml: logout
+      info: Logout from services quitting the session
+      'expected result':
+        salt:
+          ack: success
+        debug:
+          user:
+            authenticated: 'false'
+    'test 5':
+      yaml: version
+      info: Get standard version info as not logged in user
+      'expected result':
+        salt:
+          ack: success
+        debug:
+          user:
+            authenticated: 'false'
+    'test 6':
+      yaml: invalid login
+      info: Force an exception by logging in as a user unknown to the system
+      'expected result':
+        api:
+          ack: fail
+          code: 500
+        debug:
+          user:
+            authenticated: 'false'
+    'test 7':
+      yaml: logout
+      info: Force an exception by invalid use of command logout
+      'expected result':
+        api:
+          ack: fail
+          code: 100
+        debug:
+          user:
+            authenticated: 'false'
