@@ -472,6 +472,9 @@ Yaml_Insert(_pYaml,Yaml_File,MainItem0){
 			create:=0
 	}
 }
+Yaml_DeleteAll(pYaml){
+	DllCall(NumGet(NumGet(pYaml+0)+68), "UInt",pYaml) ;delete all keys
+}
 Yaml_Init(Yaml_File="?",pointerYaml=""){
 	static pYaml, CLSID,IID,Init,FileIndex
 	static CLSIDString:="{EE09B103-97E0-11CF-978F-00A02463E06F}", IIDString:="{42C642C1-97E1-11CF-978F-00A02463E06F}"
