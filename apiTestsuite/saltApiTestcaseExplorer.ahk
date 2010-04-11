@@ -55,7 +55,7 @@ Gui,Tab,2
 	
 Gui,Tab,3
 	Gui, Font, s9, Lucida Console
-	Gui, Add, Edit, w430 h330 hwndhMyEdit vMyYamlSource -Wrap 0x100000
+	Gui, Add, Edit, w430 h330 vMyYamlSource -Wrap 0x100000
 	Gui, Font
 	Gui, Add, Button, w50 gSaveMasterYaml, &Save
 	Gui, Add, Button, w50 x+10 gOpenMasterYaml, &Open
