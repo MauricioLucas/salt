@@ -23,7 +23,39 @@
         login:
           username: user
           password: pass
-  testSuite: 
+  testSuite:
+    'test 1':
+      yaml: version variant 1
+      info: Get version info using NVP cmd syntax
+      'expected result':
+        salt:
+          ack: success
+          version: 
+    'test 2':
+      yaml: version variant 2
+      info: Get version info using clear yaml syntax
+      'expected result':
+        salt:
+          ack: success
+          version: 
+    'test 3':
+      yaml: login variant 1
+      info: dummy login using NVP cmd syntax with param_0 / param_1
+      'expected result':
+        salt:
+          ack: success
+    'test 4':
+      yaml: login variant 2
+      info: dummy login using NVP cmd syntax with username / password
+      'expected result':
+        salt:
+          ack: success
+    'test 5':
+      yaml: login variant 3
+      info: dummy login using clear yaml syntax
+      'expected result':
+        salt:
+          ack: success
 'SALT API generic purpose commands test':
   testYamls:
     version:
@@ -46,7 +78,21 @@
     'illegal 2':
       saltApi:
         cmd: blah
-  testSuite: 
+  testSuite:
+    'test of illegal command 1':
+      yaml: illegal 1
+      info: Force an exception by invalid use of command logout
+      'expected result':
+        api:
+          ack: fail
+          code: 100
+    'test of illegal command 2':
+      yaml: illegal 2
+      info: Force an exception by invalid use of command logout
+      'expected result':
+        api:
+          ack: fail
+          code: 100
 'SALT API Authentification Test':
   testYamls:
     'valid login':
