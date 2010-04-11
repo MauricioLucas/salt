@@ -12,6 +12,7 @@ OnExit, EXITHANDLER
 #Include, Include\process.ahk
 #Include, Include\httpquery.ahk
 #Include, Include\yaml.ahk
+#Include, Include\LV.ahk
 ;------------------------------------------
 SALT_SCRIPTNAME     := "saltservice"
 SALT_VER            := "0.2 alpha"
@@ -96,6 +97,8 @@ SALT_GUI_MAIN:
 
     yml := SALT_READ_REPOSITORYS()
     SALT_G_REPOSITORYS_UPDATE(yml)
+    SALT_CHECK_REPOSITORYS(yml)
+    SALT_G_REPOSITORYS_UPDATE(yml)
 return
 
 GuiClose:
@@ -163,13 +166,42 @@ global
     Return, YML_REPOSITORY
 } ;*************************************************************************
 
-SALT_G_REPOSITORYS_UPDATE(YML_REPOSITORY){
-    Loop, % Yaml_GET(YML_REPOSITORY,"repositorys.0") 
+SALT_CHECK_REPOSITORYS(YML_REPOSITORYS){
+global SALT_API_URI
+    Loop, % Yaml_GET(YML_REPOSITORYS,"repositorys.0") 
     {
-        URL := Yaml_GETs(YML_REPOSITORY,"repositorys.repo" a_index ".url") 
-        STA := Yaml_GETs(YML_REPOSITORY,"repositorys.repo" a_index ".status") 
-        LV_Add("",URL,STA)
+        URL := Yaml_GETs(YML_REPOSITORYS,"repositorys.repo" a_index ".url") 
+        
+        len := httpQuery(data := "",URL SALT_API_URI)
+        if((len = -1) || !len){
+            _Status  := "offline!"
+        }else{
+            _Status  := "online"
+        }
+        VarSetCapacity(data,-1)
+        Yaml_SET(YML_REPOSITORYS,"repositorys.repo" a_index ".status",_Status) 
     }
+    ;msgbox % Yaml_Save(YML_REPOSITORYS)
+}
+
+SALT_G_REPOSITORYS_UPDATE(YML_REPOSITORYS){
+    Gui, ListView, REPOSITORY_LIST
+    LV_Delete()
+    Loop, % Yaml_GET(YML_REPOSITORYS,"repositorys.0") 
+    {
+        URL := Yaml_GETs(YML_REPOSITORYS,"repositorys.repo" a_index ".url") 
+        STA := Yaml_GETs(YML_REPOSITORYS,"repositorys.repo" a_index ".status") 
+        row := LV_Add("",URL,STA)
+        if(STA = "offline!"){
+            LV_ColorInitiate(1, "SysListView32" 3)
+            LV_ColorChange(row, 0x0000FF , 0xFFFFFF)
+        }else if(STA = "online"){
+            LV_ColorInitiate(1, "SysListView32" 3)
+            LV_ColorChange(row, 0x008000 , 0xFFFFFF)
+        }
+    }
+    LV_ModifyCol(1,400)
+    LV_ModifyCol(2,140)
 }
 
 Yaml_GETs(yml,key=""){
