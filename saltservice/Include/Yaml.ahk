@@ -401,6 +401,77 @@ Yaml_Assign(pYaml,key1,key2=""){
 	Loop 2
 		DllCall("oleaut32\SysFreeString", "UInt",NumGet(var%A_Index%,8)),NumPut(0,var%A_Index%,8)
 }
+Yaml_Insert(_pYaml,Yaml_File,MainItem0){
+	If FileExist(Yaml_File){
+		FileRead,Yaml_File_,%Yaml_File%
+		If (ErrorLevel){
+			MsgBox Error Reading File
+			Return
+		}
+	} else Yaml_File_:=Yaml_File
+	Loop,Parse,MainItem0,.
+	{
+		space.=A_Space A_Space
+		_depth:=A_Index-1
+		MainItem%_depth%:=A_LoopField
+	}
+	Loop,Parse,Yaml_File_,`n,`r
+	{
+		If A_LoopField=
+			Continue
+		if !create
+			Key1:="",Key2:="",Key3:="",Item:=""
+		If (!create){
+			RegExMatch(A_LoopField,"^\s+-\s(.*)$",Key)
+			If (Key1!=""){
+				count:=Yaml_Get(_pYaml,LastItem ".0")
+				count++
+				Yaml_Assign(_pYaml,LastItem "." count,Key1)
+				Yaml_Assign(_pYaml,LastItem ".0", count)
+				item:=Yaml_Get(_pYaml,LastItem)
+				Yaml_Assign(_pYaml,LastItem,item="" ? Key1 : item "," key1)
+				Continue
+			}
+			Loop 3
+				Key%A_Index%=
+			RegExMatch(A_LoopField,"^(\s*)(\w+)\s?:\s?(.*)\s?$",Key)
+			If (Key2=""){
+				Loop 3
+					 Key%A_Index%=
+				RegExMatch(A_LoopField,"^(\s*)'(.+)':\s?(.*)\s?$",Key)
+			}
+			If (Key2=""){
+				LastLine.=Space A_LoopField "`n"
+				Continue
+			}
+			If (SubStr(LastLine,0)="`n")
+				StringTrimRight,LastLine,LastLine,1
+			depth:=Round(Strlen(Key1)/2,0)+_depth+1
+			MainItem%depth%:=Key2
+			Item:=MainItem0
+			While % ((i:=A_Index) && depth>A_Index)
+				Item.= "." . MainItem%i%
+			If !Yaml_Exist(_pYaml,Item "." key2){
+				MainItem:=Yaml_Get(_pYaml,Item)
+				count:=Yaml_Get(_pYaml,Item . ".0")
+				count++
+				Yaml_Assign(_pYaml,Item . ".0",count)
+				Yaml_Assign(_pYaml,Item . "." . count,key2)
+				Yaml_Assign(_pYaml,Item,MainItem . (MainItem="" ? "" : ",") . (RegExMatch(Key2,"^\s?\w+\s?$") ? key2 : "'" key2 "'"))
+			}
+			Item.="." . key2
+			Yaml_Assign(_pYaml,Item,key3)
+			LastItem:=Item
+			If LastLine!=
+				Yaml_Assign(_pYaml,Item . ".",LastLine),LastLine:=""
+		} else 
+			Yaml_Assign(_pYaml,Item,Yaml_Get(_pYaml,Item) . A_LoopField)
+		If RegExMatch(Key3,"^\s*""")
+			create:=1
+		if (create && RegExMatch(A_LoopField,"""\s*$"))
+			create:=0
+	}
+}
 Yaml_Init(Yaml_File="?",pointerYaml=""){
 	static pYaml, CLSID,IID,Init,FileIndex
 	static CLSIDString:="{EE09B103-97E0-11CF-978F-00A02463E06F}", IIDString:="{42C642C1-97E1-11CF-978F-00A02463E06F}"
