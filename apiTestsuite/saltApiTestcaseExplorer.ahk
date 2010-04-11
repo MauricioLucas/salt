@@ -6,8 +6,11 @@
  * 
  * http://salt.autohotkey.com/about.html
  *
- * Version 0.2.1 
- * Initial release
+ * Version 0.2.2
+ *   incorporated changes as suggested by HotKeyIt
+ *
+ * Version History
+ *   v0.2.1 Initial release
  *
  */
 
@@ -22,6 +25,9 @@ SetTitleMatchMode, 1
 	{
 		SaltService .= "?debug=1"
 	}
+
+; init base yaml
+  yaml := yaml_init("")
 
 Gui,Font
 	Gui,Add,ListView, AltSubmit vApiTests gApiTestsClick w250 Checked h370, saltAPI TestScenario
@@ -59,6 +65,7 @@ Gui,Tab,3
 	Gui, Font
 	Gui, Add, Button, w50 gSaveMasterYaml, &Save
 	Gui, Add, Button, w50 x+10 gOpenMasterYaml, &Open
+	Gui, Add, Button, w50 x+10 gUpdateMasterYaml, &Update
 	
 
 Gui,Tab
@@ -78,7 +85,21 @@ return
 
 GuiEscape:
 GuiClose:
-	ExitApp
+	if ( saveTrigger )
+	{
+		MsgBox, 36, Question, Data has been changed. Quit without saving?
+		IfMsgBox, No
+			Gosub, SaveMasterYaml
+		else IfMsgBox, Yes
+			ExitApp
+		Else
+			Return
+	}
+	Else
+	{
+		ExitApp
+	}
+Return
 
 OpenMasterYaml:
 	FileSelectFile, yamlSource, 1
@@ -93,13 +114,16 @@ Return
 SaveMasterYaml:
 	Gosub, UpdateMasterYaml
 	FileSelectFile, yamlSource, s16
-	yaml_save( yaml )
+	yaml_save( yaml, yamlSource )
+	saveTrigger := false
 Return
 
 UpdateMasterYaml:
 	GuiControlGet, yamlSourceData,, MyYamlSource
-	yaml := yaml_init( yamlSourceData )
+	yaml_DeleteAll( yaml )
+	yaml := yaml_init( yamlSourceData, yaml )
 	Gosub, AddTestCases
+	saveTrigger := true
 Return
 
 CountSelectedTests:
@@ -132,7 +156,6 @@ Return
 
 AppendLog:
 SaveLog:
-	msgbox % A_ThisLabel
 	options := "s" ( A_ThisLabel = "SaveLog" ? "16" : "" )
 	MyLog := ""
 	GuiControlGet,MyLog,,MyEdit
@@ -278,6 +301,7 @@ return
 
 AddTestCases:
 	Gui,ListView,ApiTests
+	LV_Delete()
 	Loop, % Yaml_get( yaml, 0 )
 	{
 		LV_Add( "Check", yaml_get( yaml, A_Index ) )
@@ -317,6 +341,7 @@ ApiTestsClick:
 		Gui,ListView,ApiTests
 		LV_GetText(yamlPath, currentIdx )
 		Gosub, AddTestDetails
+		Gosub, SelectDetailsTab
 	}
 	Gosub, CountSelectedTests
 Return
