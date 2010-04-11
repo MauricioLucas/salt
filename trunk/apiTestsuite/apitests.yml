@@ -7,7 +7,7 @@
         cmd: version
     'version variant 2':
       saltApi:
-        version:
+        version: 
     'login variant 1':
       saltApi:
         cmd: login
@@ -23,21 +23,30 @@
         login:
           username: user
           password: pass
-  testSuite:
+  testSuite: 
 'SALT API generic purpose commands test':
   testYamls:
     version:
       saltApi:
-        version:
+        version: 
     help:
       saltApi:
-        help:
+        help: 
     login:
       saltApi:
         login:
           username: user
           password: pass
-  testSuite:
+  testSuite: 
+'SALT API Illegal Commands':
+  testYamls:
+    'illegal 1':
+      saltApi:
+        whatever: 
+    'illegal 2':
+      saltApi:
+        cmd: blah
+  testSuite: 
 'SALT API Authentification Test':
   testYamls:
     'valid login':
@@ -47,10 +56,10 @@
           password: secretPassword
     version:
       saltApi:
-        version:
+        version: 
     logout:
       saltApi:
-        logout:
+        logout: 
     'invalid login':
       saltApi:
         login:
@@ -63,7 +72,7 @@
       'expected result':
         salt:
           ack: success
-          version:
+          version: 
     'test 2':
       yaml: valid login
       info: Login to services using testuser
