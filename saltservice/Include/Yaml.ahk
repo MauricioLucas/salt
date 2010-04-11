@@ -435,8 +435,8 @@ Yaml_Assign(pdic,key1,key2=""){
 	Loop 2
 		DllCall("oleaut32\SysFreeString", "UInt",NumGet(var%A_Index%,8)),NumPut(0,var%A_Index%,8)
 }
-Yaml_Init(Yaml_File="?"){
-	static pDic, CLSID,IID,Init,FileIndex
+Yaml_Init(Yaml_File="?",pointerYaml=""){
+	static pYaml, CLSID,IID,Init,FileIndex
 	static CLSIDString:="{EE09B103-97E0-11CF-978F-00A02463E06F}", IIDString:="{42C642C1-97E1-11CF-978F-00A02463E06F}"
 	If (!Init && Init:=1){ ;Initialize COM and create database
 		DllCall("ole32\CoInitialize", "UInt",0),VarSetCapacity(var1, 16, 0),VarSetCapacity(var2, 16, 0)
@@ -445,26 +445,28 @@ Yaml_Init(Yaml_File="?"){
 		DllCall("ole32\CLSIDFromString", "Str",wKey, "Str",CLSID)
 		DllCall("MultiByteToWideChar", "UInt",0, "UInt",0, "UInt",&IIDString, "Int",-1, "UInt",&wKey, "Int",39)
 		DllCall("ole32\CLSIDFromString", "Str",wKey, "Str",IID)
-		DllCall("ole32\CoCreateInstance", "Str",CLSID, "UInt",0, "UInt",5, "Str",IID, "UIntP",pDic) ; CLSCTX=5
-		DllCall(NumGet(NumGet(pDic+0)+72), "UInt",pDic, "Int",0) ; Set compare mode binary (casesensitive)
-		Yaml_Set("",pdic) ;Initialize internal pointer to database
-		Yaml_Get("",pdic) ;Initialize internal pointer to database
-		Yaml_Save("",pdic) ;Initialize internal pointer to database
-		Yaml_Add("",pdic) ;Initialize internal pointer to database
-		Yaml_Dump("",pdic)
+		DllCall("ole32\CoCreateInstance", "Str",CLSID, "UInt",0, "UInt",5, "Str",IID, "UIntP",pYaml) ; CLSCTX=5
+		DllCall(NumGet(NumGet(pYaml+0)+72), "UInt",pYaml, "Int",0) ; Set compare mode binary (casesensitive)
+		Yaml_Set("",pYaml) ;Initialize internal pointer to database
+		Yaml_Get("",pYaml) ;Initialize internal pointer to database
+		Yaml_Save("",pYaml) ;Initialize internal pointer to database
+		Yaml_Add("",pYaml) ;Initialize internal pointer to database
+		Yaml_Dump("",pYaml)
 	}
 	If (Yaml_File="?"){
-		Loop % Yaml_Get(pDic,0)
-			Yaml_Save(Yaml_Get(pdic,A_Index),Yaml_Get(pdic,A_Index))
+		Loop % Yaml_Get(pYaml,0)
+			Yaml_Save(Yaml_Get(pYaml,A_Index),Yaml_Get(pYaml,A_Index))
 		Return
 	}
-	If !Yaml_Exist(_pdic,Yaml_File)
-		DllCall("ole32\CoCreateInstance", "Str",CLSID, "UInt",0, "UInt",5, "Str",IID, "UIntP",_pDic) ; CLSCTX=5
-		,DllCall(NumGet(NumGet(_pDic+0)+72), "UInt",_pDic, "Int",1) ; Set compare mode text (caseinsensitive)
+	If (!Yaml_Exist(_pYaml,Yaml_File) && !Yaml_Exist(pointerYaml))
+		DllCall("ole32\CoCreateInstance", "Str",CLSID, "UInt",0, "UInt",5, "Str",IID, "UIntP",_pYaml) ; CLSCTX=5
+		,DllCall(NumGet(NumGet(_pYaml+0)+72), "UInt",_pYaml, "Int",1) ; Set compare mode text (caseinsensitive)
+	else if (pointerYaml)
+		_pYaml:=pointerYaml
 	else {
 		Loop,%Yaml_File%
 			Yaml_File:=A_LoopFileLongPath
-		return Yaml_Get(pdic,Yaml_File)
+		return Yaml_Get(pYaml,Yaml_File)
 	}
 	If FileExist(Yaml_File){
 		Loop,%Yaml_File%
@@ -475,9 +477,9 @@ Yaml_Init(Yaml_File="?"){
 			Return
 		}
 		FileIndex++
-		Yaml_Assign(pdic,0,FileIndex)
-		Yaml_Assign(pdic,FileIndex,Yaml_File)
-		Yaml_Assign(pDic,Yaml_File,_pDic)
+		Yaml_Assign(pYaml,0,FileIndex)
+		Yaml_Assign(pYaml,FileIndex,Yaml_File)
+		Yaml_Assign(pYaml,Yaml_File,_pYaml)
 	} else Yaml_File_:=Yaml_File
 	Loop,Parse,Yaml_File_,`n,`r
 	{
@@ -491,12 +493,12 @@ Yaml_Init(Yaml_File="?"){
 					Key1=
 					RegExMatch(A_LoopField,"^\s+-\s(.*)$",Key)
 					If (Key1!=""){
-						count:=Yaml_Get(_pdic,MainItem0 ".0")
+						count:=Yaml_Get(_pYaml,MainItem0 ".0")
 						count++
-						Yaml_Assign(_pdic,MainItem0 "." count,Key1)
-						Yaml_Assign(_pdic,MainItem0 ".0", count)
-						item:=Yaml_Get(_pdic,MainItem0)
-						Yaml_Assign(_pdic,MainItem0,item="" ? Key1 : item "," key1)
+						Yaml_Assign(_pYaml,MainItem0 "." count,Key1)
+						Yaml_Assign(_pYaml,MainItem0 ".0", count)
+						item:=Yaml_Get(_pYaml,MainItem0)
+						Yaml_Assign(_pYaml,MainItem0,item="" ? Key1 : item "," key1)
 						Continue
 					}
 					LastLine.=A_LoopField "`n"
@@ -504,14 +506,14 @@ Yaml_Init(Yaml_File="?"){
 				}
 			MainItem0:=MainItem1
 			ItemCount++
-			MainItem:=Yaml_Get(_pdic,"") . (Yaml_Get(_pdic,"")!="" ? "," : "") . (RegExMatch(MainItem0,"^\s?\w+\s?$") ? MainItem0 : "'" MainItem0 "'")
-			Yaml_Assign(_pdic,"",MainItem)
-			Yaml_Assign(_pdic,0,ItemCount)
-			Yaml_Assign(_pdic,ItemCount,MainItem0)
-			Yaml_Assign(_pdic,MainItem0,MainItem2)
+			MainItem:=Yaml_Get(_pYaml,"") . (Yaml_Get(_pYaml,"")!="" ? "," : "") . (RegExMatch(MainItem0,"^\s?\w+\s?$") ? MainItem0 : "'" MainItem0 "'")
+			Yaml_Assign(_pYaml,"",MainItem)
+			Yaml_Assign(_pYaml,0,ItemCount)
+			Yaml_Assign(_pYaml,ItemCount,MainItem0)
+			Yaml_Assign(_pYaml,MainItem0,MainItem2)
 			If (SubStr(LastLine,0)="`n")
 				StringTrimRight,LastLine,LastLine,1
-			Yaml_Assign(_pdic,MainItem0 ".",LastLine)
+			Yaml_Assign(_pYaml,MainItem0 ".",LastLine)
 			MainItem:="",MainItem1:="",MainItem2:="",LastLine:=""
 			LastItem:=MainItem0
 			Continue
@@ -520,12 +522,12 @@ Yaml_Init(Yaml_File="?"){
 			Key1=
 			RegExMatch(A_LoopField,"^\s+-\s(.*)$",Key)
 			If (Key1!=""){
-				count:=Yaml_Get(_pdic,LastItem ".0")
+				count:=Yaml_Get(_pYaml,LastItem ".0")
 				count++
-				Yaml_Assign(_pdic,LastItem "." count,Key1)
-				Yaml_Assign(_pdic,LastItem ".0", count)
-				item:=Yaml_Get(_pdic,LastItem)
-				Yaml_Assign(_pdic,LastItem,item="" ? Key1 : item "," key1)
+				Yaml_Assign(_pYaml,LastItem "." count,Key1)
+				Yaml_Assign(_pYaml,LastItem ".0", count)
+				item:=Yaml_Get(_pYaml,LastItem)
+				Yaml_Assign(_pYaml,LastItem,item="" ? Key1 : item "," key1)
 				Continue
 			}
 			Loop 3
@@ -547,23 +549,25 @@ Yaml_Init(Yaml_File="?"){
 			Item:=MainItem0
 			While % ((i:=A_Index) && depth>A_Index)
 				Item.= "." . MainItem%i%
-			MainItem:=Yaml_Get(_pdic,Item)
-			count:=Yaml_Get(_pdic,Item . ".0")
-			count++
-			Yaml_Assign(_pdic,Item . ".0",count)
-			Yaml_Assign(_pdic,Item . "." . count,key2)
-			Yaml_Assign(_pdic,Item,MainItem . (MainItem="" ? "" : ",") . (RegExMatch(Key2,"^\s?\w+\s?$") ? key2 : "'" key2 "'"))
+			If !Yaml_Exist(_pYaml,Item "." key2){
+				MainItem:=Yaml_Get(_pYaml,Item)
+				count:=Yaml_Get(_pYaml,Item . ".0")
+				count++
+				Yaml_Assign(_pYaml,Item . ".0",count)
+				Yaml_Assign(_pYaml,Item . "." . count,key2)
+				Yaml_Assign(_pYaml,Item,MainItem . (MainItem="" ? "" : ",") . (RegExMatch(Key2,"^\s?\w+\s?$") ? key2 : "'" key2 "'"))
+			}
 			Item.="." . key2
+			Yaml_Assign(_pYaml,Item,key3)
 			LastItem:=Item
-			Yaml_Assign(_pdic,Item,key3)
-			Yaml_Assign(_pdic,Item . ".",LastLine)
-			LastLine=
+			If LastLine!=
+				Yaml_Assign(_pYaml,Item . ".",LastLine),LastLine:=""
 		} else 
-			Yaml_Assign(_pdic,Item,Yaml_Get(_pdic,Item) . A_LoopField)
+			Yaml_Assign(_pYaml,Item,Yaml_Get(_pYaml,Item) . A_LoopField)
 		If RegExMatch(Key3,"^\s*""")
 			create:=1
 		if (create && RegExMatch(A_LoopField,"""\s*$"))
 			create:=0
 	}
-	Return _pdic
+	Return _pYaml
 }
