@@ -225,213 +225,179 @@ ExitApp
 ;~ MsgBox % Yaml_Save(new) ;dump new Yaml database to text 
 
 ;~ ExitApp
-Yaml_Add(pdic,key1="",key2=""){
-	static _pdic,var1,var2
-	If pdic!=
-		If pDic is not digit
-		{
-			Loop,%pdic%
-				pdic:=A_LoopFileLongPath
-			pDic:=Yaml_Get(_pdic,pdic)
-		}
-	If (pdic){
-		If (recursive:=InStr(key1,".")=1 ? 1 : 0)
-			StringTrimLeft,key1,key1,1
-		If InStr(key1,".")
-			parent:=SubStr(key1,1,InStr(key1,".",1,0)-1)
-		StringTrimLeft,key,key1,% InStr(key1,".",1,0)
-		If (parent!="" && !Yaml_Exist(pdic,key1))
-			Yaml_Add(pdic,"." parent,key)
-		If !Yaml_Exist(pdic,key1){
-			count:=Yaml_Get(pdic,parent!="" ? (parent "." 0) : 0)
+Yaml_Add(pYaml,key1="",key2=""){
+	If (recursive:=InStr(key1,".")=1 ? 1 : 0)
+		StringTrimLeft,key1,key1,1
+	If InStr(key1,".")
+		parent:=SubStr(key1,1,InStr(key1,".",1,0)-1)
+	StringTrimLeft,key,key1,% InStr(key1,".",1,0)
+	If (parent!="" && !Yaml_Exist(pYaml,key1))
+		Yaml_Add(pYaml,"." parent,key)
+	If !Yaml_Exist(pYaml,key1){
+		count:=Yaml_Get(pYaml,parent!="" ? (parent "." 0) : 0)
+		count++
+		Yaml_Assign(pYaml,parent!="" ? (parent "." 0) : 0,count)
+		Yaml_Assign(pYaml,parent!="" ? (parent "." count) : count,key)
+	} else if (!recursive){
+		count:=Yaml_Get(pYaml,key1 "." 0)
+		If (count=""){
+			count=2
+			Yaml_Assign(pYaml,key1 ".1",Yaml_Get(pYaml,key1))
+		} else
 			count++
-			Yaml_Assign(pdic,parent!="" ? (parent "." 0) : 0,count)
-			Yaml_Assign(pdic,parent!="" ? (parent "." count) : count,key)
-		} else if (!recursive){
-			count:=Yaml_Get(pdic,key1 "." 0)
-			If (count=""){
-				count=2
-				Yaml_Assign(pdic,key1 ".1",Yaml_Get(pdic,key1))
-			} else
-				count++
-			Yaml_Assign(pdic,key1 "." 0,count)
-			Yaml_Assign(pdic,key1 "." count,key2)
-		}
-		key2:=(RegExMatch(Key2,"^\s?\w+\s?$") ? key2 : "'" key2 "'")
-		Yaml_Assign(pdic,key1,Yaml_Get(pdic,key1)="" ? key2 : Yaml_Get(pdic,key1) "," key2)
-		Return 0
-	} else if _pdic
-		Return -1
-	VarSetCapacity(var1, 16, 0),VarSetCapacity(var2, 16, 0),NumPut(8, var1),NumPut(8, var2)
-	_pdic:=key1
+		Yaml_Assign(pYaml,key1 "." 0,count)
+		Yaml_Assign(pYaml,key1 "." count,key2)
+	}
+	key2:=(RegExMatch(Key2,"^\s?\w+\s?$") ? key2 : "'" key2 "'")
+	Yaml_Assign(pYaml,key1,Yaml_Get(pYaml,key1)="" ? key2 : Yaml_Get(pYaml,key1) "," key2)
 }
-Yaml_Exist(pdic,Key=""){
+Yaml_Exist(pYaml,Key=""){
 	VarSetCapacity(var,16,0),NumPut(8, var)
 	VarSetCapacity(wStr, StrLen(Key)*2+1,0)
 	DllCall("MultiByteToWideChar", "UInt",0, "UInt",0, "UInt",&Key, "Int",-1, "UInt",&wStr, "Int",StrLen(Key)+1)
 	NumPut(DllCall("oleaut32\SysAllocString","Str",wStr),var,8)
-	DllCall(NumGet(NumGet(pDic+0)+48), "UInt",pDic, "UInt",&var, "IntP",bExist)
+	DllCall(NumGet(NumGet(pYaml+0)+48), "UInt",pYaml, "UInt",&var, "IntP",bExist)
 	DllCall("oleaut32\SysFreeString", "UInt",NumGet(var,8)),NumPut(0,var,8)
 	Return bExist
 }
 
-Yaml_Dump(pdic,ByRef Output,key=""){
-	static _pdic
-	If pdic!=
-		If pDic is not digit
+Yaml_Dump(pYaml,ByRef Output,key=""){
+	If (key=""){
+		Loop % Yaml_Get(pYaml,0)
 		{
-			Loop,%pdic%
-				pdic:=A_LoopFileLongPath
-			pDic:=Yaml_Get(_pdic,pdic)
+			mainkey:=Yaml_Get(pYaml,A_Index)
+			Output .= Yaml_Get(pYaml,mainkey ".")="" ? "" : Yaml_Get(pYaml,mainkey ".") "`n" ;"---`r`n"
+			value:=Yaml_Get(pYaml,mainkey)
+			Output .= (RegExMatch(mainkey,"^\w+$") ? mainkey : ("'" mainkey "'")) ":"
+			if (sub:=Yaml_Get(pYaml,mainkey "." 1)){
+				if !Yaml_Exist(pYaml,mainkey "." sub){
+					Output .= "`n"
+					Loop % Yaml_Get(pYaml,mainkey ".0"){
+						value:=Yaml_Get(pYaml,mainkey "." A_Index)
+						Output .= "  - " (RegExMatch(value,"^\w+$") ? value : "'" value "'") "`n"
+					}
+					Continue
+				} else Output .= "`n"
+			} else Output .= " " value "`n"
+			Yaml_Dump(pYaml,Output,"." mainkey)
 		}
-	if (pdic){
-		If (key=""){
-			Loop % Yaml_Get(pdic,0)
-			{
-				mainkey:=Yaml_Get(pdic,A_Index)
-				Output .= Yaml_Get(pdic,mainkey ".")="" ? "" : Yaml_Get(pdic,mainkey ".") "`n"
-				value:=Yaml_Get(pdic,mainkey)
-				Output .= (RegExMatch(mainkey,"^\w+$") ? mainkey : ("'" mainkey "'")) ":"
-				if (sub:=Yaml_Get(pdic,mainkey "." 1)){
-					if !Yaml_Exist(pdic,mainkey "." sub){
-						Output .= "`n"
-						Loop % Yaml_Get(pdic,mainkey ".0"){
-							value:=Yaml_Get(pdic,mainkey "." A_Index)
-							Output .= "  - " (RegExMatch(value,"^\w+$") ? value : "'" value "'") "`n"
-						}
-						Continue
-					} else Output .= "`n"
-				} else Output .= " " value "`n"
-				Yaml_Dump(pdic,Output,"." mainkey)
-			}
-			return Output
-		} else {
-			If (-1 < (start:=RegExMatch(key,"[^\.]")-1)){
-				Loop % start*2
-					recurse .= A_Space
-				StringTrimLeft,_key,key,%start%
-			} else _key:=key
-			Loop % Yaml_Get(pdic,_key "." 0){
-				key1:=Yaml_Get(pdic,_key "." A_Index)
-				Output .= Yaml_Get(pdic,_key "." key1 ".")="" ? "" : Yaml_Get(pdic,_key "." key1 ".") "`n"
-				value:=Yaml_Get(pdic,_key "." key1)
-				Output .= recurse (RegExMatch(key1,"^\w+$") ? key1 : ("'" key1 "'")) ":"
-				if (sub:=Yaml_Get(pdic,_key "." key1 ".1")){
-					if !Yaml_Exist(pdic,_key "." key1 "." sub){
-						Output .= "`n"
-						Loop % Yaml_Get(pdic,_key "." key1 ".0"){
-							value:=Yaml_Get(pdic,_key "." key1 "." A_Index)
-							Output .= recurse "  - " value "`n"
-						}
-						Continue
-					} else Output .= "`n"
-				} else Output .= " " value "`n"
-				Yaml_Dump(pdic,Output, "." key "." key1)
-			}
+		return Output
+	} else {
+		If (-1 < (start:=RegExMatch(key,"[^\.]")-1)){
+			Loop % start*2
+				recurse .= A_Space
+			StringTrimLeft,_key,key,%start%
+		} else _key:=key
+		Loop % Yaml_Get(pYaml,_key "." 0){
+			key1:=Yaml_Get(pYaml,_key "." A_Index)
+			Output .= Yaml_Get(pYaml,_key "." key1 ".")="" ? "" : Yaml_Get(pYaml,_key "." key1 ".") "`n"
+			value:=Yaml_Get(pYaml,_key "." key1)
+			Output .= recurse (RegExMatch(key1,"^\w+$") ? key1 : ("'" key1 "'")) ":"
+			if (sub:=Yaml_Get(pYaml,_key "." key1 ".1")){
+				if !Yaml_Exist(pYaml,_key "." key1 "." sub){
+					Output .= "`n"
+					Loop % Yaml_Get(pYaml,_key "." key1 ".0"){
+						value:=Yaml_Get(pYaml,_key "." key1 "." A_Index)
+						Output .= recurse "  - " value "`n"
+					}
+					Continue
+				} else Output .= "`n"
+			} else Output .= " " value "`n"
+			Yaml_Dump(pYaml,Output, "." key "." key1)
 		}
-		Return output
-	} else if _pdic
-		Return
-	_pdic:=output
+	}
+	Return output
 }
 
-Yaml_Save(pdic,ToFile=""){
-	static _pdic
-	If pdic!=
-		If pDic is not digit
-		{
-			Loop,%pdic%
-				pdic:=A_LoopFileLongPath
-			pDic:=Yaml_Get(_pdic,pdic)
+Yaml_Save(pYaml,ToFile=""){
+	Yaml_Dump(pYaml,file)
+	If (ToFile!="" && FileExist(ToFile)){
+		StringReplace,savefile,file,`n,`r`n,A
+		FileMove,%ToFile%,%ToFile%.bkp.yaml
+		If FileExist(ToFile){
+			MsgBox Error Saving File
 		}
-	If (pDic){
-		Yaml_Dump(pdic,file)
-		If (ToFile!="" && FileExist(ToFile)){
-			StringReplace,savefile,file,`n,`n`r,A
-			FileMove,%ToFile%,%ToFile%.bkp.yaml
-			If FileExist(ToFile){
-				MsgBox Error Saving File
-			}
-			FileAppend,%savefile%,%ToFile%
+		FileAppend,%savefile%,%ToFile%
+		If (ErrorLevel){
+			MsgBox Error Saving File
+		}
+		FileDelete,%ToFile%.bkp.yaml
+		If (ErrorLevel){
+			MsgBox Error Saving File
+			FileDelete,%ToFile%.bkp
+			FileMove,%ToFile%.bkp.yaml,%ToFile%
+		}
+	} else if (ToFile!=""){
+		StringReplace,savefile,file,`n,`r`n,A
+		FileAppend,%savefile%,%ToFile%
 			If (ErrorLevel){
 				MsgBox Error Saving File
 			}
-			FileDelete,%ToFile%.bkp.yaml
-			If (ErrorLevel){
-				MsgBox Error Saving File
-				FileDelete,%ToFile%.bkp
-				FileMove,%ToFile%.bkp.yaml,%ToFile%
-			}
-		} else if (ToFile!=""){
-			StringReplace,savefile,file,`n,`n`r,A
-			FileAppend,%savefile%,%ToFile%
-				If (ErrorLevel){
-					MsgBox Error Saving File
-				}
-		}
-		Return file
-	} else if _pdic
-		Return
-	_pdic:=ToFile
+	}
+	Return file
 }
 
-Yaml_Get(pdic,key1=""){
-	static _pdic,var1,var2
-	If pdic!=
-		If pDic is not digit
-		{
-			Loop,%pdic%
-				pdic:=A_LoopFileLongPath
-			pDic:=Yaml_Get(_pdic,pdic)
+Yaml_Clone(pYaml){
+	static CLSIDString:="{EE09B103-97E0-11CF-978F-00A02463E06F}", IIDString:="{42C642C1-97E1-11CF-978F-00A02463E06F}"
+	If (!Init && Init:=1){ ;Initialize COM and create database
+		DllCall("ole32\CoInitialize", "UInt",0),VarSetCapacity(var1, 16),VarSetCapacity(var2, 16)
+		NumPut(8, var1),NumPut(8, var2),VarSetCapacity(CLSID, 16),VarSetCapacity(wKey, 79),VarSetCapacity(IID, 16)
+		DllCall("MultiByteToWideChar", "UInt",0, "UInt",0, "UInt",&CLSIDString, "Int",-1, "UInt",&wKey, "Int",39)
+		DllCall("ole32\CLSIDFromString", "Str",wKey, "Str",CLSID)
+		DllCall("MultiByteToWideChar", "UInt",0, "UInt",0, "UInt",&IIDString, "Int",-1, "UInt",&wKey, "Int",39)
+		DllCall("ole32\CLSIDFromString", "Str",wKey, "Str",IID)
+	}
+	DllCall("ole32\CoCreateInstance", "Str",CLSID, "UInt",0, "UInt",5, "Str",IID, "UIntP",_pYaml) ; CLSCTX=5
+	,DllCall(NumGet(NumGet(_pYaml+0)+72), "UInt",_pYaml, "Int",1)
+	VarSetCapacity(var1, 16),VarSetCapacity(var2, 16),NumPut(8, var1),NumPut(8, var2)
+	DllCall(NumGet(NumGet(pYaml+0)+80), "UInt",pYaml, "UIntP",penum) ; create key-list in penum
+	Loop {
+		If (DllCall(NumGet(NumGet(penum+0)+12), "UInt",penum, "UInt",1, "UInt",&var1, "UInt",0)) {
+			DllCall(NumGet(NumGet(penum+0)+8), "UInt",penum)   ; END: destroy key-list
+			penum=                                                  ; signal end of list
+			ErrorLevel=                                                  ; empty
+			Return _pYaml     		                                           
 		}
-	If (pdic){
-		VarSetCapacity(wStr, StrLen(Key1)*2+1,0)
-		DllCall("MultiByteToWideChar", "UInt",0, "UInt",0, "UInt",&Key1, "Int",-1, "UInt",&wStr, "Int",StrLen(Key1)+1)
-		NumPut(DllCall("oleaut32\SysAllocString","Str",wStr),var1,8)
-		DllCall(NumGet(NumGet(pDic+0)+48), "UInt",pDic, "UInt",&var1, "IntP",bExist)
-		If bExist {
-			DllCall(NumGet(NumGet(pDic+0)+36), "UInt",pDic, "UInt",&var1, "UInt",&var2)
-			nLen := DllCall("WideCharToMultiByte", "UInt",0, "UInt",0, "UInt",NumGet(var2,8), "Int",-1, "UInt",0, "Int",0, "UInt",0, "UInt",0)
-			VarSetCapacity(Key2, nLen,0)
-			DllCall("WideCharToMultiByte", "UInt",0, "UInt",0, "UInt",NumGet(var2,8), "Int",-1, "Str",Key2, "Int",nLen, "UInt",0, "UInt",0)
-			DllCall("oleaut32\SysFreeString", "UInt",NumGet(var2,8)),NumPut(0,var2,8)
-		}
+		nLen := DllCall("WideCharToMultiByte", "UInt",0, "UInt",0, "UInt",NumGet(var1,8), "Int",-1, "UInt",0, "Int",0, "UInt",0, "UInt",0)
+		VarSetCapacity(wKey, nLen)
+		DllCall("WideCharToMultiByte", "UInt",0, "UInt",0, "UInt",NumGet(var1,8), "Int",-1, "Str",wKey, "Int",nLen, "UInt",0, "UInt",0)
 		DllCall("oleaut32\SysFreeString", "UInt",NumGet(var1,8)),NumPut(0,var1,8)
-		Return Key2
-	} else if _pdic
-		Return
-	VarSetCapacity(var1, 16, 0),VarSetCapacity(var2, 16, 0),NumPut(8, var1),NumPut(8, var2)
-	_pdic:=key1
+		Yaml_Assign(_pYaml,wKey,Yaml_Get(pYaml,wKey))
+	}
 }
-Yaml_Set(pdic,key1="",key2=""){
-	static _pdic,var1,var2
-	If pdic!=
-		If pDic is not digit
-		{
-			Loop,%pdic%
-				pdic:=A_LoopFileLongPath
-			pDic:=Yaml_Get(_pdic,pdic)
-		}
-	If (pdic){
-		If !Yaml_Exist(pdic,key1){
-			Yaml_Add(pdic,key1,key2)
-			return
-		}
-		Yaml_Assign(pdic,key1,key2)
-		Return 0
-	} else if _pdic
-		Return -1
-	VarSetCapacity(var1, 16, 0),VarSetCapacity(var2, 16, 0),NumPut(8, var1),NumPut(8, var2)
-	_pdic:=key1
+
+Yaml_Get(pYaml,key1=""){
+	VarSetCapacity(var1, 16),VarSetCapacity(var2, 16),NumPut(8, var1),NumPut(8, var2)
+	VarSetCapacity(wStr, StrLen(Key1)*2+1,0)
+	DllCall("MultiByteToWideChar", "UInt",0, "UInt",0, "UInt",&Key1, "Int",-1, "UInt",&wStr, "Int",StrLen(Key1)+1)
+	NumPut(DllCall("oleaut32\SysAllocString","Str",wStr),var1,8)
+	DllCall(NumGet(NumGet(pYaml+0)+48), "UInt",pYaml, "UInt",&var1, "IntP",bExist)
+	If bExist {
+		DllCall(NumGet(NumGet(pYaml+0)+36), "UInt",pYaml, "UInt",&var1, "UInt",&var2)
+		nLen := DllCall("WideCharToMultiByte", "UInt",0, "UInt",0, "UInt",NumGet(var2,8), "Int",-1, "UInt",0, "Int",0, "UInt",0, "UInt",0)
+		VarSetCapacity(Key2, nLen,0)
+		DllCall("WideCharToMultiByte", "UInt",0, "UInt",0, "UInt",NumGet(var2,8), "Int",-1, "Str",Key2, "Int",nLen, "UInt",0, "UInt",0)
+		DllCall("oleaut32\SysFreeString", "UInt",NumGet(var2,8)),NumPut(0,var2,8)
+	}
+	DllCall("oleaut32\SysFreeString", "UInt",NumGet(var1,8)),NumPut(0,var1,8)
+	Return Key2
 }
-Yaml_Assign(pdic,key1,key2=""){
+Yaml_Set(pYaml,key1="",key2=""){
+	If !Yaml_Exist(pYaml,key1){
+		Yaml_Add(pYaml,key1,key2)
+		return
+	}
+	Yaml_Assign(pYaml,key1,key2)
+	Return
+}
+Yaml_Assign(pYaml,key1,key2=""){
 	Loop % (2){
 		VarSetCapacity(var%A_Index%,16,0),NumPut(8,var%A_Index%)
 		VarSetCapacity(wStr, StrLen(Key%A_Index%)*2+1,0)
 		DllCall("MultiByteToWideChar", "UInt",0, "UInt",0, "UInt",&Key%A_Index%, "Int",-1, "UInt",&wStr, "Int",StrLen(Key%A_Index%)+1)
 		NumPut(DllCall("oleaut32\SysAllocString","Str",wStr),var%A_Index%,8)
 	}
-	DllCall(NumGet(NumGet(pDic+0)+32), "UInt",pDic, "UInt",&var1, "UInt",&var2)  ; 8 (Set0 -> 7)
+	DllCall(NumGet(NumGet(pYaml+0)+32), "UInt",pYaml, "UInt",&var1, "UInt",&var2)  ; 8 (Set0 -> 7)
 	Loop 2
 		DllCall("oleaut32\SysFreeString", "UInt",NumGet(var%A_Index%,8)),NumPut(0,var%A_Index%,8)
 }
@@ -439,7 +405,7 @@ Yaml_Init(Yaml_File="?",pointerYaml=""){
 	static pYaml, CLSID,IID,Init,FileIndex
 	static CLSIDString:="{EE09B103-97E0-11CF-978F-00A02463E06F}", IIDString:="{42C642C1-97E1-11CF-978F-00A02463E06F}"
 	If (!Init && Init:=1){ ;Initialize COM and create database
-		DllCall("ole32\CoInitialize", "UInt",0),VarSetCapacity(var1, 16, 0),VarSetCapacity(var2, 16, 0)
+		DllCall("ole32\CoInitialize", "UInt",0),VarSetCapacity(var1, 16),VarSetCapacity(var2, 16)
 		NumPut(8, var1),NumPut(8, var2),VarSetCapacity(CLSID, 16),VarSetCapacity(wKey, 79),VarSetCapacity(IID, 16)
 		DllCall("MultiByteToWideChar", "UInt",0, "UInt",0, "UInt",&CLSIDString, "Int",-1, "UInt",&wKey, "Int",39)
 		DllCall("ole32\CLSIDFromString", "Str",wKey, "Str",CLSID)
@@ -447,30 +413,22 @@ Yaml_Init(Yaml_File="?",pointerYaml=""){
 		DllCall("ole32\CLSIDFromString", "Str",wKey, "Str",IID)
 		DllCall("ole32\CoCreateInstance", "Str",CLSID, "UInt",0, "UInt",5, "Str",IID, "UIntP",pYaml) ; CLSCTX=5
 		DllCall(NumGet(NumGet(pYaml+0)+72), "UInt",pYaml, "Int",0) ; Set compare mode binary (casesensitive)
-		Yaml_Set("",pYaml) ;Initialize internal pointer to database
-		Yaml_Get("",pYaml) ;Initialize internal pointer to database
-		Yaml_Save("",pYaml) ;Initialize internal pointer to database
-		Yaml_Add("",pYaml) ;Initialize internal pointer to database
-		Yaml_Dump("",pYaml)
 	}
 	If (Yaml_File="?"){
 		Loop % Yaml_Get(pYaml,0)
-			Yaml_Save(Yaml_Get(pYaml,A_Index),Yaml_Get(pYaml,A_Index))
+			Yaml_Save(Yaml_Get(pYaml,Yaml_Get(pYaml,A_Index)),Yaml_Get(pYaml,A_Index))
 		Return
 	}
+	Loop,%Yaml_File%
+		Yaml_File:=A_LoopFileLongPath
 	If (!Yaml_Exist(_pYaml,Yaml_File) && !Yaml_Exist(pointerYaml))
 		DllCall("ole32\CoCreateInstance", "Str",CLSID, "UInt",0, "UInt",5, "Str",IID, "UIntP",_pYaml) ; CLSCTX=5
 		,DllCall(NumGet(NumGet(_pYaml+0)+72), "UInt",_pYaml, "Int",1) ; Set compare mode text (caseinsensitive)
 	else if (pointerYaml)
 		_pYaml:=pointerYaml
-	else {
-		Loop,%Yaml_File%
-			Yaml_File:=A_LoopFileLongPath
+	else
 		return Yaml_Get(pYaml,Yaml_File)
-	}
 	If FileExist(Yaml_File){
-		Loop,%Yaml_File%
-			Yaml_File:=A_LoopFileLongPath
 		FileRead,Yaml_File_,%Yaml_File%
 		If (ErrorLevel){
 			MsgBox Error Reading File
